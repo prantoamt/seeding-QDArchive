@@ -1,10 +1,8 @@
 """Smoke tests for the pipeline scaffolding."""
 
-from pathlib import Path
 
 from pipeline.config import QDA_EXTENSIONS, ensure_dirs
-from pipeline.db.connection import init_db
-from pipeline.db.models import Base, File
+from pipeline.db.models import File
 from pipeline.storage.file_manager import compute_sha256
 from pipeline.utils.license import is_open_license
 

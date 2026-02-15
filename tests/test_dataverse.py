@@ -1,12 +1,11 @@
 """Tests for the Dataverse connector with mocked HTTP responses."""
 
-import json
 from unittest.mock import MagicMock, patch
 
 import httpx
 import pytest
 
-from pipeline.connectors.base import BaseConnector, SearchResult
+from pipeline.connectors.base import BaseConnector
 from pipeline.connectors.dataverse import DataverseConnector, _filename_from_headers
 
 
@@ -176,7 +175,7 @@ def test_get_metadata_with_numeric_id(connector):
     mock_resp.raise_for_status = MagicMock()
 
     with patch("httpx.get", return_value=mock_resp) as mock_get:
-        result = connector.get_metadata("https://data.qdr.syr.edu/dataset/42")
+        connector.get_metadata("https://data.qdr.syr.edu/dataset/42")
 
     # Should have used numeric ID endpoint
     call_args = mock_get.call_args
@@ -237,7 +236,8 @@ def test_extract_persistent_id():
 
 
 def test_extract_persistent_id_bare_doi():
-    assert DataverseConnector._extract_persistent_id("doi:10.5064/F6ABC123") == "doi:10.5064/F6ABC123"
+    pid = "doi:10.5064/F6ABC123"
+    assert DataverseConnector._extract_persistent_id(pid) == pid
 
 
 def test_extract_persistent_id_none():

@@ -301,6 +301,51 @@ def export_cmd(fmt: str, output: str | None) -> None:
 
 
 @cli.command()
+@click.option("--yes", "-y", is_flag=True, help="Skip confirmation prompt.")
+def reset(yes: bool) -> None:
+    """Delete database, downloaded data, exports, and logs — full clean slate."""
+    import shutil
+
+    from pipeline.config import DATA_DIR, DB_PATH, EXPORTS_DIR, LOG_FILE
+
+    if not yes:
+        msg = "This will delete the database, all downloaded data, exports, and logs. Continue?"
+        if not click.confirm(msg):
+            console.print("[dim]Aborted.[/dim]")
+            return
+
+    removed = []
+
+    if DB_PATH.exists():
+        DB_PATH.unlink()
+        removed.append(f"Database: {DB_PATH}")
+
+    if DATA_DIR.exists():
+        shutil.rmtree(DATA_DIR)
+        removed.append(f"Data: {DATA_DIR}")
+
+    if EXPORTS_DIR.exists():
+        shutil.rmtree(EXPORTS_DIR)
+        removed.append(f"Exports: {EXPORTS_DIR}")
+
+    if LOG_FILE.exists():
+        LOG_FILE.unlink()
+        removed.append(f"Log: {LOG_FILE}")
+
+    # Re-create directories and DB
+    ensure_dirs()
+    init_db()
+
+    if removed:
+        for r in removed:
+            console.print(f"  Deleted {r}")
+    else:
+        console.print("  Nothing to clean.")
+
+    console.print("[bold]Reset complete.[/bold]")
+
+
+@cli.command()
 def status() -> None:
     """Show pipeline status and record counts."""
     session = get_session()
