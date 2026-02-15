@@ -131,11 +131,44 @@ class DataverseConnector(BaseConnector):
 
         subject_list = _get_field_value(fields, "subject", [])
 
+        # Extended metadata fields
+        keyword_list = _get_field_value(fields, "keyword", [])
+        keywords = []
+        if isinstance(keyword_list, list):
+            for kw in keyword_list:
+                val = kw.get("keywordValue", {}).get("value", "")
+                if val:
+                    keywords.append(val)
+
+        kind_of_data = _get_field_value(fields, "kindOfData", [])
+        if not isinstance(kind_of_data, list):
+            kind_of_data = []
+
+        language_list = _get_field_value(fields, "language", [])
+        if not isinstance(language_list, list):
+            language_list = []
+
+        software_list = _get_field_value(fields, "software", [])
+        software = []
+        if isinstance(software_list, list):
+            for sw in software_list:
+                val = sw.get("softwareName", {}).get("value", "")
+                if val:
+                    software.append(val)
+
+        geo_list = _get_field_value(fields, "geographicCoverage", [])
+        geo_coverage = []
+        if isinstance(geo_list, list):
+            for geo in geo_list:
+                country = geo.get("country", {}).get("value", "")
+                if country:
+                    geo_coverage.append(country)
+
         # License info
         license_info = version.get("license", {})
         license_name = license_info.get("name", "") if isinstance(license_info, dict) else ""
         license_uri = license_info.get("uri", "") if isinstance(license_info, dict) else ""
-        terms = version.get("termsOfUse", "")
+        terms = version.get("termsOfAccess", "")
         if not license_name and terms:
             license_name = terms
 
@@ -143,12 +176,19 @@ class DataverseConnector(BaseConnector):
         files = []
         for fentry in version.get("files", []):
             df = fentry.get("dataFile", {})
+            checksum = df.get("checksum", {})
+            api_checksum = ""
+            if checksum:
+                api_checksum = f"{checksum.get('type', '')}:{checksum.get('value', '')}"
             files.append({
                 "id": df.get("id"),
                 "name": df.get("filename", ""),
                 "size": df.get("filesize", 0),
                 "content_type": df.get("contentType", ""),
+                "friendly_type": df.get("friendlyType", ""),
                 "download_url": f"{self._base_url}/api/access/datafile/{df.get('id')}",
+                "restricted": fentry.get("restricted", False),
+                "api_checksum": api_checksum,
             })
 
         result = SearchResult(
@@ -161,6 +201,11 @@ class DataverseConnector(BaseConnector):
             license_url=license_uri,
             date_published=version.get("releaseTime", ""),
             tags=subject_list if isinstance(subject_list, list) else [],
+            keywords=keywords,
+            kind_of_data=kind_of_data,
+            language=language_list,
+            software=software,
+            geographic_coverage=geo_coverage,
             files=files,
         )
         return result

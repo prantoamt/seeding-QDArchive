@@ -17,6 +17,11 @@ class SearchResult:
     license_url: str = ""
     date_published: str = ""
     tags: list[str] = field(default_factory=list)
+    keywords: list[str] = field(default_factory=list)
+    kind_of_data: list[str] = field(default_factory=list)
+    language: list[str] = field(default_factory=list)
+    software: list[str] = field(default_factory=list)
+    geographic_coverage: list[str] = field(default_factory=list)
     files: list[dict] = field(default_factory=list)
 
 

@@ -65,8 +65,19 @@ def _save_metadata_only(session, source, result, metadata, finfo, fname, file_ex
         authors=metadata.authors,
         date_published=metadata.date_published,
         tags="; ".join(metadata.tags) if metadata.tags else None,
+        keywords="; ".join(metadata.keywords) if metadata.keywords else None,
+        kind_of_data="; ".join(metadata.kind_of_data) if metadata.kind_of_data else None,
+        language="; ".join(metadata.language) if metadata.language else None,
+        software="; ".join(metadata.software) if metadata.software else None,
+        geographic_coverage=(
+            "; ".join(metadata.geographic_coverage) if metadata.geographic_coverage else None
+        ),
+        content_type=finfo.get("content_type"),
+        friendly_type=finfo.get("friendly_type"),
+        restricted=finfo.get("restricted", False),
+        api_checksum=finfo.get("api_checksum"),
         is_qda_file=is_qda,
-        notes="access restricted (403)",
+        notes="access restricted",
     )
     session.add(file_record)
     session.commit()
@@ -145,7 +156,13 @@ def _scrape_results(connector, source, results, session):
             fname = finfo["name"]
             download_url = finfo["download_url"]
             file_ext = Path(fname).suffix.lower()
-            is_qda = file_ext in QDA_EXTENSIONS
+            friendly = finfo.get("friendly_type", "")
+            ctype = finfo.get("content_type", "")
+            is_qda = (
+                file_ext in QDA_EXTENSIONS
+                or "refi-qda" in friendly.lower()
+                or "refiqda" in ctype.lower()
+            )
 
             # Build storage path
             if "persistentId=" in result.source_url:
@@ -155,6 +172,20 @@ def _scrape_results(connector, source, results, session):
             record_id = record_id.replace("/", "_").replace(":", "_")
             storage_path = get_storage_path(source, record_id, fname)
             dest_dir = str(storage_path.parent)
+
+            # Skip download for known-restricted files
+            if finfo.get("restricted", False):
+                _save_metadata_only(
+                    session, source, result, metadata, finfo,
+                    fname, file_ext, is_qda,
+                )
+                restricted_count += 1
+                label = "[green]QDA[/green]" if is_qda else "[dim]file[/dim]"
+                console.print(
+                    f"  {label} {fname} "
+                    f"[yellow](restricted — metadata saved)[/yellow]"
+                )
+                continue
 
             try:
                 local_path = connector.download(
@@ -203,6 +234,21 @@ def _scrape_results(connector, source, results, session):
                 authors=metadata.authors,
                 date_published=metadata.date_published,
                 tags="; ".join(metadata.tags) if metadata.tags else None,
+                keywords="; ".join(metadata.keywords) if metadata.keywords else None,
+                kind_of_data=(
+                    "; ".join(metadata.kind_of_data) if metadata.kind_of_data else None
+                ),
+                language="; ".join(metadata.language) if metadata.language else None,
+                software="; ".join(metadata.software) if metadata.software else None,
+                geographic_coverage=(
+                    "; ".join(metadata.geographic_coverage)
+                    if metadata.geographic_coverage
+                    else None
+                ),
+                content_type=finfo.get("content_type"),
+                friendly_type=finfo.get("friendly_type"),
+                restricted=finfo.get("restricted", False),
+                api_checksum=finfo.get("api_checksum"),
                 is_qda_file=is_qda,
                 downloaded_at=datetime.utcnow(),
             )
@@ -466,11 +512,17 @@ def db_show(ids: tuple[int, ...]) -> None:
                 f"[bold]Size:[/bold]        {size}",
                 f"[bold]QDA file:[/bold]    {'yes' if r.is_qda_file else 'no'}",
                 f"[bold]Status:[/bold]      {status}",
+                f"[bold]Restricted:[/bold]  {'yes' if r.restricted else 'no'}",
                 "",
                 f"[bold]Title:[/bold]       {r.title or '—'}",
                 f"[bold]Authors:[/bold]     {r.authors or '—'}",
                 f"[bold]Published:[/bold]   {r.date_published or '—'}",
                 f"[bold]Tags:[/bold]        {r.tags or '—'}",
+                f"[bold]Keywords:[/bold]    {r.keywords or '—'}",
+                f"[bold]Kind of data:[/bold] {r.kind_of_data or '—'}",
+                f"[bold]Language:[/bold]    {r.language or '—'}",
+                f"[bold]Software:[/bold]    {r.software or '—'}",
+                f"[bold]Geography:[/bold]   {r.geographic_coverage or '—'}",
                 "",
                 f"[bold]Source:[/bold]      {r.source_name}",
                 f"[bold]Source URL:[/bold]  {r.source_url or '—'}",
@@ -478,8 +530,11 @@ def db_show(ids: tuple[int, ...]) -> None:
                 f"[bold]License:[/bold]     {r.license_type or '—'}",
                 f"[bold]License URL:[/bold] {r.license_url or '—'}",
                 "",
+                f"[bold]Content type:[/bold] {r.content_type or '—'}",
+                f"[bold]Friendly type:[/bold] {r.friendly_type or '—'}",
                 f"[bold]Local path:[/bold]  {r.local_path or '—'}",
                 f"[bold]File hash:[/bold]   {r.file_hash or '—'}",
+                f"[bold]API checksum:[/bold] {r.api_checksum or '—'}",
                 f"[bold]Downloaded:[/bold]  {r.downloaded_at or '—'}",
                 f"[bold]Created:[/bold]     {r.created_at}",
                 f"[bold]Notes:[/bold]       {r.notes or '—'}",

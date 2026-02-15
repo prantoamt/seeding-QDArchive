@@ -40,6 +40,17 @@ class File(Base):
     date_published: Mapped[str | None] = mapped_column(String(50))
     tags: Mapped[str | None] = mapped_column(Text)
 
+    # Extended metadata (from API)
+    keywords: Mapped[str | None] = mapped_column(Text)
+    kind_of_data: Mapped[str | None] = mapped_column(Text)
+    language: Mapped[str | None] = mapped_column(String(100))
+    content_type: Mapped[str | None] = mapped_column(String(200))
+    friendly_type: Mapped[str | None] = mapped_column(String(200))
+    software: Mapped[str | None] = mapped_column(Text)
+    geographic_coverage: Mapped[str | None] = mapped_column(Text)
+    restricted: Mapped[bool | None] = mapped_column(Boolean)
+    api_checksum: Mapped[str | None] = mapped_column(String(150))
+
     # Classification
     is_qda_file: Mapped[bool] = mapped_column(Boolean, default=False)
 

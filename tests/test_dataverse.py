@@ -101,6 +101,7 @@ DATASET_RESPONSE = {
         "latestVersion": {
             "releaseTime": "2023-06-15T00:00:00Z",
             "license": {"name": "CC0 1.0", "uri": "https://creativecommons.org/publicdomain/zero/1.0/"},
+            "termsOfAccess": "Freely available",
             "metadataBlocks": {
                 "citation": {
                     "fields": [
@@ -119,25 +120,56 @@ DATASET_RESPONSE = {
                             ],
                         },
                         {"typeName": "subject", "value": ["Social Sciences"]},
+                        {
+                            "typeName": "keyword",
+                            "value": [
+                                {"keywordValue": {"value": "qualitative research"}},
+                                {"keywordValue": {"value": "interviews"}},
+                            ],
+                        },
+                        {
+                            "typeName": "kindOfData",
+                            "value": ["interview transcripts", "coded qualitative data"],
+                        },
+                        {"typeName": "language", "value": ["English"]},
+                        {
+                            "typeName": "software",
+                            "value": [
+                                {"softwareName": {"value": "NVivo 12"}},
+                            ],
+                        },
+                        {
+                            "typeName": "geographicCoverage",
+                            "value": [
+                                {"country": {"value": "United States"}},
+                                {"country": {"value": "Canada"}},
+                            ],
+                        },
                     ]
                 }
             },
             "files": [
                 {
+                    "restricted": False,
                     "dataFile": {
                         "id": 12345,
                         "filename": "interviews.qdpx",
                         "filesize": 204800,
-                        "contentType": "application/octet-stream",
-                    }
+                        "contentType": "application/x-zip-refiqda",
+                        "friendlyType": "REFI-QDA-Project",
+                        "checksum": {"type": "SHA-1", "value": "abc123def456"},
+                    },
                 },
                 {
+                    "restricted": True,
                     "dataFile": {
                         "id": 12346,
                         "filename": "codebook.pdf",
                         "filesize": 51200,
                         "contentType": "application/pdf",
-                    }
+                        "friendlyType": "Adobe PDF",
+                        "checksum": {"type": "MD5", "value": "deadbeef"},
+                    },
                 },
             ],
         }
@@ -163,10 +195,55 @@ def test_get_metadata_with_persistent_id(connector):
     assert result.files[0]["id"] == 12345
     assert "/api/access/datafile/12345" in result.files[0]["download_url"]
 
+    # New metadata fields
+    assert result.keywords == ["qualitative research", "interviews"]
+    assert result.kind_of_data == ["interview transcripts", "coded qualitative data"]
+    assert result.language == ["English"]
+    assert result.software == ["NVivo 12"]
+    assert result.geographic_coverage == ["United States", "Canada"]
+
+    # File-level fields
+    assert result.files[0]["restricted"] is False
+    assert result.files[0]["friendly_type"] == "REFI-QDA-Project"
+    assert result.files[0]["content_type"] == "application/x-zip-refiqda"
+    assert result.files[0]["api_checksum"] == "SHA-1:abc123def456"
+    assert result.files[1]["restricted"] is True
+    assert result.files[1]["api_checksum"] == "MD5:deadbeef"
+
     # Should have used persistentId endpoint
     call_args = mock_get.call_args
     assert ":persistentId" in call_args[0][0]
     assert call_args[1]["params"]["persistentId"] == "doi:10.5064/F6ABC123"
+
+
+def test_get_metadata_terms_of_access_fallback(connector):
+    """When no license block exists, termsOfAccess should be used as license_type."""
+    response = {
+        "status": "OK",
+        "data": {
+            "latestVersion": {
+                "releaseTime": "2023-01-01T00:00:00Z",
+                "termsOfAccess": "QDR Standard Access",
+                "metadataBlocks": {
+                    "citation": {
+                        "fields": [
+                            {"typeName": "title", "value": "No License Dataset"},
+                        ]
+                    }
+                },
+                "files": [],
+            }
+        },
+    }
+    mock_resp = MagicMock()
+    mock_resp.json.return_value = response
+    mock_resp.raise_for_status = MagicMock()
+
+    url = "https://data.qdr.syr.edu/dataset.xhtml?persistentId=doi:10.5064/F6TEST"
+    with patch("httpx.get", return_value=mock_resp):
+        result = connector.get_metadata(url)
+
+    assert result.license_type == "QDR Standard Access"
 
 
 def test_get_metadata_with_numeric_id(connector):
