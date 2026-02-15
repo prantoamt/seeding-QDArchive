@@ -20,6 +20,16 @@ Questions to clarify with the professor or during coordination meetings.
 
 ### Database Merging
 - How will other students' databases be shared for merging? Is there a common format or schema?
+- **Proposal:** If all students agree on a common CSV column structure for Part 1, merging and deduplication in Part 2 becomes much simpler. Suggested minimum columns:
+  ```
+  source_name, source_url, download_url, file_name, file_type, file_hash,
+  file_size_bytes, license_type, title, description, authors, date_published,
+  tags, is_qda_file
+  ```
+  - `file_hash` (SHA-256) is critical — it's the primary dedup key
+  - `source_url` + `file_name` serves as secondary dedup key
+  - Without a shared schema, each student's export will need custom parsing and field mapping before merging
+- Should we raise this at the next coordination meeting so everyone aligns early?
 
 ### ISIC Rev. 5 Classification
 - Is there a reference mapping or example of qualitative data classified under ISIC that we can use as ground truth?
