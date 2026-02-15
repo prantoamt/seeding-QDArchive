@@ -392,6 +392,71 @@ def db_view(source: str | None, qda_only: bool, restricted_only: bool, limit: in
         session.close()
 
 
+@cli.command("show")
+@click.argument("ids", nargs=-1, required=True, type=int)
+def db_show(ids: tuple[int, ...]) -> None:
+    """Show full details for one or more records by ID."""
+    session = get_session()
+    try:
+        for record_id in ids:
+            r = session.query(File).filter_by(id=record_id).first()
+            if not r:
+                console.print(f"[red]Record {record_id} not found.[/red]")
+                continue
+
+            from rich.panel import Panel
+
+            if r.local_path:
+                status = "downloaded"
+            elif r.notes and "restricted" in r.notes:
+                status = "restricted"
+            else:
+                status = "metadata only"
+
+            size = _format_size(r.file_size_bytes) if r.file_size_bytes else "unknown"
+
+            lines = [
+                f"[bold]File:[/bold]        {r.file_name}",
+                f"[bold]Type:[/bold]        {r.file_type or 'unknown'}",
+                f"[bold]Size:[/bold]        {size}",
+                f"[bold]QDA file:[/bold]    {'yes' if r.is_qda_file else 'no'}",
+                f"[bold]Status:[/bold]      {status}",
+                "",
+                f"[bold]Title:[/bold]       {r.title or '—'}",
+                f"[bold]Authors:[/bold]     {r.authors or '—'}",
+                f"[bold]Published:[/bold]   {r.date_published or '—'}",
+                f"[bold]Tags:[/bold]        {r.tags or '—'}",
+                "",
+                f"[bold]Source:[/bold]      {r.source_name}",
+                f"[bold]Source URL:[/bold]  {r.source_url or '—'}",
+                f"[bold]Download URL:[/bold] {r.download_url or '—'}",
+                f"[bold]License:[/bold]     {r.license_type or '—'}",
+                f"[bold]License URL:[/bold] {r.license_url or '—'}",
+                "",
+                f"[bold]Local path:[/bold]  {r.local_path or '—'}",
+                f"[bold]File hash:[/bold]   {r.file_hash or '—'}",
+                f"[bold]Downloaded:[/bold]  {r.downloaded_at or '—'}",
+                f"[bold]Created:[/bold]     {r.created_at}",
+                f"[bold]Notes:[/bold]       {r.notes or '—'}",
+            ]
+
+            desc = r.description or ""
+            if desc:
+                # Truncate long descriptions
+                if len(desc) > 300:
+                    desc = desc[:300] + "..."
+                lines.insert(7, f"[bold]Description:[/bold] {desc}")
+
+            console.print(Panel(
+                "\n".join(lines),
+                title=f"Record #{r.id}",
+                expand=False,
+            ))
+
+    finally:
+        session.close()
+
+
 def _format_size(size_bytes: int) -> str:
     """Format file size in human-readable form."""
     if size_bytes < 1024:
