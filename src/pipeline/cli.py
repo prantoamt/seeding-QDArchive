@@ -173,6 +173,16 @@ def _scrape_results(connector, source, results, session):
             storage_path = get_storage_path(source, record_id, fname)
             dest_dir = str(storage_path.parent)
 
+            # Skip if already in DB (by download_url)
+            already = (
+                session.query(File)
+                .filter_by(source_name=source, download_url=download_url)
+                .first()
+            )
+            if already:
+                console.print(f"  [dim]Already cataloged: {fname}[/dim]")
+                continue
+
             # Skip download for known-restricted files
             if finfo.get("restricted", False):
                 _save_metadata_only(

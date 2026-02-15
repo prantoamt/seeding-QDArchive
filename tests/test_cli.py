@@ -175,6 +175,52 @@ def test_search_with_connector(runner):
     assert "Test Dataset" in result.output
 
 
+def test_scrape_skips_already_cataloged(runner, sample_records):
+    """Files already in DB by download_url are skipped without downloading."""
+    # Give the existing record a download_url to match against
+    session = get_session()
+    rec = session.query(File).filter_by(file_name="transcript.pdf").first()
+    rec.download_url = "https://example.com/api/files/99/download"
+    session.commit()
+    session.close()
+
+    mock_result = MagicMock(
+        title="Test Dataset",
+        source_url="https://example.com/dataset/1",
+    )
+    mock_metadata = MagicMock(
+        license_type="CC BY 4.0",
+        license_url="https://creativecommons.org/licenses/by/4.0/",
+        title="Test Dataset",
+        description="desc",
+        authors="Doe",
+        date_published="2024-01-01",
+        tags=[],
+        keywords=[],
+        kind_of_data=[],
+        language=[],
+        software=[],
+        geographic_coverage=[],
+        files=[{
+            "name": "transcript.pdf",
+            "download_url": "https://example.com/api/files/99/download",
+            "id": 99,
+            "size": 2048,
+            "restricted": False,
+        }],
+    )
+    mock_connector = MagicMock()
+    mock_connector.search.return_value = [mock_result]
+    mock_connector.get_metadata.return_value = mock_metadata
+
+    with patch("pipeline.cli.CONNECTORS", {"qdr": mock_connector}):
+        result = runner.invoke(cli, ["scrape", "qdr", "-q", "test"])
+
+    assert result.exit_code == 0
+    assert "Already cataloged" in result.output
+    mock_connector.download.assert_not_called()
+
+
 def test_db_search(runner, sample_records):
     result = runner.invoke(cli, ["db", "--search", "interview"])
     assert result.exit_code == 0
