@@ -5,6 +5,10 @@ qualitative data analysis
 NVivo
 ATLAS.ti
 MaxQDA
+Dedoose
+QDAcity
+QDA Miner
+CAQDAS
 coded transcript
 
 # Qualitative data queries (second pass)
@@ -16,3 +20,6 @@ ethnography
 grounded theory
 semi-structured interview
 thematic analysis
+narrative analysis
+case study research
+participant observation
