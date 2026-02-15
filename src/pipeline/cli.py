@@ -5,6 +5,7 @@ from datetime import datetime
 from pathlib import Path
 
 import click
+import httpx
 from rich.console import Console
 from rich.table import Table
 
@@ -37,6 +38,38 @@ def _get_connector(source: str):
         console.print(f"[red]Unknown source '{source}'. Available: {available}[/red]")
         raise SystemExit(1)
     return connector
+
+
+def _save_metadata_only(session, source, result, metadata, finfo, fname, file_ext, is_qda):
+    """Save a metadata-only DB record for a file we couldn't download (e.g. 403)."""
+    existing = (
+        session.query(File)
+        .filter_by(source_name=source, download_url=finfo["download_url"], file_name=fname)
+        .first()
+    )
+    if existing:
+        return  # already cataloged
+
+    file_record = File(
+        source_name=source,
+        source_url=result.source_url,
+        download_url=finfo["download_url"],
+        file_name=fname,
+        file_type=file_ext,
+        file_size_bytes=finfo.get("size"),
+        local_path=None,
+        license_type=metadata.license_type,
+        license_url=metadata.license_url,
+        title=metadata.title,
+        description=metadata.description,
+        authors=metadata.authors,
+        date_published=metadata.date_published,
+        tags="; ".join(metadata.tags) if metadata.tags else None,
+        is_qda_file=is_qda,
+        notes="access restricted (403)",
+    )
+    session.add(file_record)
+    session.commit()
 
 
 @cli.command()
@@ -100,6 +133,7 @@ def scrape(source: str, limit: int | None, query: str) -> None:
     session = get_session()
     downloaded_count = 0
     skipped_count = 0
+    restricted_count = 0
 
     try:
         for i, result in enumerate(results, 1):
@@ -145,6 +179,21 @@ def scrape(source: str, limit: int | None, query: str) -> None:
 
                 try:
                     local_path = connector.download(download_url, dest_dir)
+                except httpx.HTTPStatusError as e:
+                    if e.response.status_code == 403:
+                        # Restricted file — save metadata-only record
+                        _save_metadata_only(
+                            session, source, result, metadata, finfo,
+                            fname, file_ext, is_qda,
+                        )
+                        restricted_count += 1
+                        label = "[green]QDA[/green]" if is_qda else "[dim]file[/dim]"
+                        console.print(
+                            f"  {label} {fname} [yellow](restricted — metadata saved)[/yellow]"
+                        )
+                        continue
+                    console.print(f"  [red]Download failed for {fname}: {e}[/red]")
+                    continue
                 except Exception as e:
                     console.print(f"  [red]Download failed for {fname}: {e}[/red]")
                     continue
@@ -189,7 +238,11 @@ def scrape(source: str, limit: int | None, query: str) -> None:
     finally:
         session.close()
 
-    console.print(f"\n[bold]Done.[/bold] Downloaded: {downloaded_count}, Skipped: {skipped_count}")
+    console.print(
+        f"\n[bold]Done.[/bold] Downloaded: {downloaded_count}, "
+        f"Restricted (metadata only): {restricted_count}, "
+        f"Skipped (license): {skipped_count}"
+    )
 
 
 @cli.command("export")
@@ -232,6 +285,78 @@ def status() -> None:
                 console.print(f"  {src:<15} {count}")
     finally:
         session.close()
+
+
+@cli.command("db")
+@click.option("--source", "-s", default=None, help="Filter by source name.")
+@click.option("--qda-only", is_flag=True, help="Show only QDA files.")
+@click.option("--restricted-only", is_flag=True, help="Show only restricted files.")
+@click.option("--limit", "-n", default=50, type=int, help="Max rows to display.")
+def db_view(source: str | None, qda_only: bool, restricted_only: bool, limit: int) -> None:
+    """Browse the metadata database."""
+    session = get_session()
+    try:
+        query = session.query(File)
+        if source:
+            query = query.filter(File.source_name == source)
+        if qda_only:
+            query = query.filter(File.is_qda_file.is_(True))
+        if restricted_only:
+            query = query.filter(File.local_path.is_(None))
+
+        total = query.count()
+        records = query.order_by(File.id).limit(limit).all()
+
+        if not records:
+            console.print("[yellow]No records found.[/yellow]")
+            return
+
+        table = Table(title=f"Database records ({total} total, showing {len(records)})")
+        table.add_column("ID", style="dim", width=5)
+        table.add_column("File", max_width=40)
+        table.add_column("Type", width=6)
+        table.add_column("Source", width=8)
+        table.add_column("QDA", width=4)
+        table.add_column("Status", width=12)
+        table.add_column("Size", width=10, justify="right")
+
+        for r in records:
+            if r.local_path:
+                status = "[green]downloaded[/green]"
+            elif r.notes and "restricted" in r.notes:
+                status = "[yellow]restricted[/yellow]"
+            else:
+                status = "[dim]metadata[/dim]"
+
+            size = _format_size(r.file_size_bytes) if r.file_size_bytes else ""
+            qda_label = "[green]yes[/green]" if r.is_qda_file else ""
+
+            table.add_row(
+                str(r.id),
+                r.file_name[:40],
+                r.file_type or "",
+                r.source_name,
+                qda_label,
+                status,
+                size,
+            )
+
+        console.print(table)
+
+        if total > limit:
+            console.print(f"[dim]Showing {limit} of {total} — use --limit to see more[/dim]")
+    finally:
+        session.close()
+
+
+def _format_size(size_bytes: int) -> str:
+    """Format file size in human-readable form."""
+    if size_bytes < 1024:
+        return f"{size_bytes} B"
+    elif size_bytes < 1024 * 1024:
+        return f"{size_bytes / 1024:.1f} KB"
+    else:
+        return f"{size_bytes / (1024 * 1024):.1f} MB"
 
 
 @cli.command("list-sources")

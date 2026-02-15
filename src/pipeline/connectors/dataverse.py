@@ -1,6 +1,7 @@
 """Dataverse API connector — works for QDR, DANS, DataverseNO."""
 
 import logging
+import re
 from pathlib import Path
 
 import httpx
@@ -112,7 +113,8 @@ class DataverseConnector(BaseConnector):
         description_list = _get_field_value(fields, "dsDescription", [])
         description = ""
         if isinstance(description_list, list) and description_list:
-            description = description_list[0].get("dsDescriptionValue", {}).get("value", "")
+            raw = description_list[0].get("dsDescriptionValue", {}).get("value", "")
+            description = _strip_html(raw)
 
         authors_list = _get_field_value(fields, "author", [])
         author_names = []
@@ -188,6 +190,12 @@ class DataverseConnector(BaseConnector):
         if url.startswith("doi:") or url.startswith("hdl:"):
             return url
         return None
+
+
+def _strip_html(text: str) -> str:
+    """Remove HTML tags and collapse whitespace."""
+    clean = re.sub(r"<[^>]+>", " ", text)
+    return re.sub(r"\s+", " ", clean).strip()
 
 
 def _get_field_value(fields: dict, type_name: str, default=None):

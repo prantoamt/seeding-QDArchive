@@ -16,6 +16,7 @@ OPEN_LICENSES = {
     "odc-pddl",
     "mit",
     "apache-2.0",
+    "standard-access",  # QDR: docs are CC BY-SA 4.0, data free for registered users
 }
 
 

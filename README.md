@@ -54,10 +54,16 @@ pdm install
 
 ```bash
 # Search a source for qualitative data
-pdm run pipeline search zenodo -q "qualitative interview" -t qdpx
+pdm run pipeline search qdr -q "qualitative interview"
 
 # Scrape and download records
-pdm run pipeline scrape dryad -n 50
+pdm run pipeline scrape qdr -n 5
+
+# Browse the metadata database
+pdm run pipeline db
+pdm run pipeline db --qda-only             # Only QDA files
+pdm run pipeline db --restricted-only      # Only restricted (not downloaded) files
+pdm run pipeline db -s qdr -n 100          # Filter by source, show up to 100 rows
 
 # Check collection progress
 pdm run pipeline status
@@ -66,7 +72,7 @@ pdm run pipeline status
 pdm run pipeline list-sources
 
 # Export metadata to CSV
-pdm run pipeline export -o results/metadata.csv
+pdm run pipeline export -o exports/metadata.csv
 ```
 
 ## Project Structure
@@ -76,7 +82,8 @@ src/pipeline/
 ├── cli.py                  # Click CLI entry point
 ├── config.py               # Paths, constants, QDA extensions
 ├── connectors/
-│   └── base.py             # Abstract BaseConnector interface
+│   ├── base.py             # Abstract BaseConnector interface
+│   └── dataverse.py        # Dataverse API connector (QDR, DANS, DataverseNO)
 ├── db/
 │   ├── models.py           # SQLAlchemy models (files table)
 │   ├── connection.py       # DB engine and session management
