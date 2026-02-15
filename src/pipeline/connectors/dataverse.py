@@ -2,6 +2,7 @@
 
 import logging
 import re
+import time
 from pathlib import Path
 
 import httpx
@@ -13,6 +14,10 @@ logger = logging.getLogger("pipeline")
 # Timeout for API requests (seconds)
 REQUEST_TIMEOUT = 30.0
 DOWNLOAD_TIMEOUT = 120.0
+
+# Retry settings
+MAX_RETRIES = 3
+RETRY_DELAY = 2.0  # seconds, doubles each retry
 
 
 class DataverseConnector(BaseConnector):
@@ -161,25 +166,42 @@ class DataverseConnector(BaseConnector):
         return result
 
     def download(self, url: str, dest_dir: str, filename: str | None = None) -> str:
-        """Download a file from the Dataverse access API. Returns local file path."""
+        """Download a file from the Dataverse access API. Returns local file path.
+
+        Retries up to MAX_RETRIES times on connection errors with exponential backoff.
+        """
         dest = Path(dest_dir)
         dest.mkdir(parents=True, exist_ok=True)
 
-        with httpx.stream("GET", url, timeout=DOWNLOAD_TIMEOUT, follow_redirects=True) as resp:
-            resp.raise_for_status()
+        for attempt in range(1, MAX_RETRIES + 1):
+            try:
+                with httpx.stream(
+                    "GET", url, timeout=DOWNLOAD_TIMEOUT, follow_redirects=True
+                ) as resp:
+                    resp.raise_for_status()
 
-            if not filename:
-                filename = _filename_from_headers(resp.headers)
-            if not filename:
-                filename = url.rstrip("/").split("/")[-1]
+                    if not filename:
+                        filename = _filename_from_headers(resp.headers)
+                    if not filename:
+                        filename = url.rstrip("/").split("/")[-1]
 
-            file_path = dest / filename
-            with open(file_path, "wb") as f:
-                for chunk in resp.iter_bytes(chunk_size=8192):
-                    f.write(chunk)
+                    file_path = dest / filename
+                    with open(file_path, "wb") as f:
+                        for chunk in resp.iter_bytes(chunk_size=8192):
+                            f.write(chunk)
 
-        logger.info("Downloaded %s -> %s", url, file_path)
-        return str(file_path)
+                logger.info("Downloaded %s -> %s", url, file_path)
+                return str(file_path)
+            except (httpx.ConnectError, httpx.ReadError, ConnectionError) as e:
+                if attempt < MAX_RETRIES:
+                    delay = RETRY_DELAY * (2 ** (attempt - 1))
+                    logger.warning(
+                        "Download attempt %d/%d failed for %s: %s. Retrying in %.0fs...",
+                        attempt, MAX_RETRIES, url, e, delay,
+                    )
+                    time.sleep(delay)
+                else:
+                    raise
 
     @staticmethod
     def _extract_persistent_id(url: str) -> str | None:
