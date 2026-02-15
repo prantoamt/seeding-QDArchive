@@ -7,8 +7,6 @@
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-3776AB?logo=python&logoColor=white)](https://python.org)
 [![PDM](https://img.shields.io/badge/pdm-managed-blueviolet)](https://pdm-project.org)
 [![Code style: Ruff](https://img.shields.io/badge/code%20style-ruff-000000?logo=ruff&logoColor=white)](https://docs.astral.sh/ruff/)
-[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-
 ---
 
 *Academic project (10 ECTS) — FAU Erlangen-Nurnberg*
