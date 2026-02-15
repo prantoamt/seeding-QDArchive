@@ -175,10 +175,13 @@ def scrape(source: str, limit: int | None, query: str) -> None:
                     record_id = str(finfo["id"])
                 # Sanitize record_id for use as directory name
                 record_id = record_id.replace("/", "_").replace(":", "_")
-                dest_dir = str(get_storage_path(source, record_id, "").parent)
+                storage_path = get_storage_path(source, record_id, fname)
+                dest_dir = str(storage_path.parent)
 
                 try:
-                    local_path = connector.download(download_url, dest_dir)
+                    local_path = connector.download(
+                        download_url, dest_dir, filename=fname
+                    )
                 except httpx.HTTPStatusError as e:
                     if e.response.status_code == 403:
                         # Restricted file — save metadata-only record

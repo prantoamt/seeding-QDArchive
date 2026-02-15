@@ -37,5 +37,5 @@ class BaseConnector(ABC):
         """Fetch full metadata for a specific record."""
 
     @abstractmethod
-    def download(self, url: str, dest_dir: str) -> str:
+    def download(self, url: str, dest_dir: str, filename: str | None = None) -> str:
         """Download a file and return the local path."""

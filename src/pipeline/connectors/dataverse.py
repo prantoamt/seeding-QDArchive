@@ -160,7 +160,7 @@ class DataverseConnector(BaseConnector):
         )
         return result
 
-    def download(self, url: str, dest_dir: str) -> str:
+    def download(self, url: str, dest_dir: str, filename: str | None = None) -> str:
         """Download a file from the Dataverse access API. Returns local file path."""
         dest = Path(dest_dir)
         dest.mkdir(parents=True, exist_ok=True)
@@ -168,10 +168,9 @@ class DataverseConnector(BaseConnector):
         with httpx.stream("GET", url, timeout=DOWNLOAD_TIMEOUT, follow_redirects=True) as resp:
             resp.raise_for_status()
 
-            # Try to get filename from Content-Disposition header
-            filename = _filename_from_headers(resp.headers)
             if not filename:
-                # Fallback: use the file ID from URL
+                filename = _filename_from_headers(resp.headers)
+            if not filename:
                 filename = url.rstrip("/").split("/")[-1]
 
             file_path = dest / filename
