@@ -53,27 +53,15 @@ pdm install
 ### Usage
 
 ```bash
-# Search a source for qualitative data
-pdm run pipeline search qdr -q "qualitative interview"
-
-# Scrape and download records
-pdm run pipeline scrape qdr -n 5
-
-# Browse the metadata database
-pdm run pipeline db
-pdm run pipeline db --qda-only             # Only QDA files
-pdm run pipeline db --restricted-only      # Only restricted (not downloaded) files
-pdm run pipeline db -s qdr -n 100          # Filter by source, show up to 100 rows
-
-# Check collection progress
-pdm run pipeline status
-
-# List all configured sources
-pdm run pipeline list-sources
-
-# Export metadata to CSV
-pdm run pipeline export -o exports/metadata.csv
+pdm run pipeline search qdr -q "qualitative"        # Search QDR
+pdm run pipeline scrape qdr -f queries.txt -n 10     # Scrape with query file
+pdm run pipeline db --qda-only                       # Browse QDA files
+pdm run pipeline show 6 49 50                        # Inspect records
+pdm run pipeline status                              # Collection progress
+pdm run pipeline export                              # Export to CSV
 ```
+
+> **Full CLI documentation:** See [manual.md](manual.md) for all commands, options, and examples.
 
 ## Project Structure
 
@@ -107,7 +95,6 @@ data/{source_name}/{record_id}/{filename}
 pdm run pytest               # Run tests
 pdm run ruff check src/      # Lint
 pdm run ruff format src/     # Format
-man man/pipeline.1            # View CLI manual
 ```
 
 ## Tech Stack
