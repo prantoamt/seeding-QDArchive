@@ -1,0 +1,18 @@
+# QDA-specific queries (first pass)
+qdpx
+REFI-QDA
+qualitative data analysis
+NVivo
+ATLAS.ti
+MaxQDA
+coded transcript
+
+# Qualitative data queries (second pass)
+interview transcript
+qualitative research
+qualitative data
+focus group
+ethnography
+grounded theory
+semi-structured interview
+thematic analysis

@@ -108,143 +108,183 @@ def search(source: str, query: str, file_type: str | None) -> None:
     console.print(table)
 
 
-@cli.command()
-@click.argument("source")
-@click.option("--limit", "-n", default=None, type=int, help="Max datasets to scrape.")
-@click.option("--query", "-q", default="qualitative", help="Search query string.")
-def scrape(source: str, limit: int | None, query: str) -> None:
-    """Scrape and download data from a source."""
-    connector = _get_connector(source)
+def _scrape_results(connector, source, results, session):
+    """Process a list of search results: fetch metadata, check license, download files.
 
-    console.print(f"[bold]Scraping {source}[/bold] query='{query}' limit={limit}")
-
-    # Step 1: Search for datasets
-    try:
-        results = connector.search(query)
-    except Exception as e:
-        console.print(f"[red]Search failed: {e}[/red]")
-        raise SystemExit(1) from e
-
-    if limit:
-        results = results[:limit]
-
-    console.print(f"Found {len(results)} datasets to process.")
-
-    session = get_session()
+    Returns (downloaded_count, restricted_count, skipped_count).
+    """
     downloaded_count = 0
     skipped_count = 0
     restricted_count = 0
 
-    try:
-        for i, result in enumerate(results, 1):
-            console.print(f"\n[bold][{i}/{len(results)}][/bold] {result.title[:70]}")
+    for i, result in enumerate(results, 1):
+        console.print(f"\n[bold][{i}/{len(results)}][/bold] {result.title[:70]}")
 
-            # Step 2: Get full metadata
+        # Get full metadata
+        try:
+            metadata = connector.get_metadata(result.source_url)
+        except Exception as e:
+            console.print(f"  [red]Metadata fetch failed: {e}[/red]")
+            continue
+
+        # Check license
+        if not is_open_license(metadata.license_type):
+            console.print(
+                f"  [yellow]Skipping — license not open: "
+                f"'{metadata.license_type or 'none'}'[/yellow]"
+            )
+            skipped_count += 1
+            continue
+
+        if not metadata.files:
+            console.print("  [yellow]No files in this dataset.[/yellow]")
+            continue
+
+        # Download each file
+        for finfo in metadata.files:
+            fname = finfo["name"]
+            download_url = finfo["download_url"]
+            file_ext = Path(fname).suffix.lower()
+            is_qda = file_ext in QDA_EXTENSIONS
+
+            # Build storage path
+            if "persistentId=" in result.source_url:
+                record_id = result.source_url.split("persistentId=")[-1]
+            else:
+                record_id = str(finfo["id"])
+            record_id = record_id.replace("/", "_").replace(":", "_")
+            storage_path = get_storage_path(source, record_id, fname)
+            dest_dir = str(storage_path.parent)
+
             try:
-                metadata = connector.get_metadata(result.source_url)
-            except Exception as e:
-                console.print(f"  [red]Metadata fetch failed: {e}[/red]")
-                continue
-
-            # Step 3: Check license
-            if not is_open_license(metadata.license_type):
-                console.print(
-                    f"  [yellow]Skipping — license not open: "
-                    f"'{metadata.license_type or 'none'}'[/yellow]"
+                local_path = connector.download(
+                    download_url, dest_dir, filename=fname
                 )
-                skipped_count += 1
-                continue
-
-            if not metadata.files:
-                console.print("  [yellow]No files in this dataset.[/yellow]")
-                continue
-
-            # Step 4: Download each file
-            for finfo in metadata.files:
-                fname = finfo["name"]
-                download_url = finfo["download_url"]
-                file_ext = Path(fname).suffix.lower()
-
-                # Determine if it's a QDA file
-                is_qda = file_ext in QDA_EXTENSIONS
-
-                # Build storage path
-                if "persistentId=" in result.source_url:
-                    record_id = result.source_url.split("persistentId=")[-1]
-                else:
-                    record_id = str(finfo["id"])
-                # Sanitize record_id for use as directory name
-                record_id = record_id.replace("/", "_").replace(":", "_")
-                storage_path = get_storage_path(source, record_id, fname)
-                dest_dir = str(storage_path.parent)
-
-                try:
-                    local_path = connector.download(
-                        download_url, dest_dir, filename=fname
+            except httpx.HTTPStatusError as e:
+                if e.response.status_code == 403:
+                    _save_metadata_only(
+                        session, source, result, metadata, finfo,
+                        fname, file_ext, is_qda,
                     )
-                except httpx.HTTPStatusError as e:
-                    if e.response.status_code == 403:
-                        # Restricted file — save metadata-only record
-                        _save_metadata_only(
-                            session, source, result, metadata, finfo,
-                            fname, file_ext, is_qda,
-                        )
-                        restricted_count += 1
-                        label = "[green]QDA[/green]" if is_qda else "[dim]file[/dim]"
-                        console.print(
-                            f"  {label} {fname} [yellow](restricted — metadata saved)[/yellow]"
-                        )
-                        continue
-                    console.print(f"  [red]Download failed for {fname}: {e}[/red]")
+                    restricted_count += 1
+                    label = "[green]QDA[/green]" if is_qda else "[dim]file[/dim]"
+                    console.print(
+                        f"  {label} {fname} "
+                        f"[yellow](restricted — metadata saved)[/yellow]"
+                    )
                     continue
-                except Exception as e:
-                    console.print(f"  [red]Download failed for {fname}: {e}[/red]")
-                    continue
+                console.print(f"  [red]Download failed for {fname}: {e}[/red]")
+                continue
+            except Exception as e:
+                console.print(f"  [red]Download failed for {fname}: {e}[/red]")
+                continue
 
-                # Compute hash
-                file_hash = compute_sha256(Path(local_path))
+            file_hash = compute_sha256(Path(local_path))
 
-                # Check for duplicate by hash
-                existing = session.query(File).filter_by(file_hash=file_hash).first()
-                if existing:
-                    console.print(f"  [dim]Duplicate (hash match): {fname}[/dim]")
-                    Path(local_path).unlink(missing_ok=True)
-                    continue
+            existing = session.query(File).filter_by(file_hash=file_hash).first()
+            if existing:
+                console.print(f"  [dim]Duplicate (hash match): {fname}[/dim]")
+                Path(local_path).unlink(missing_ok=True)
+                continue
 
-                # Save to DB
-                file_record = File(
-                    source_name=source,
-                    source_url=result.source_url,
-                    download_url=download_url,
-                    file_name=fname,
-                    file_type=file_ext,
-                    file_hash=file_hash,
-                    file_size_bytes=finfo.get("size"),
-                    local_path=local_path,
-                    license_type=metadata.license_type,
-                    license_url=metadata.license_url,
-                    title=metadata.title,
-                    description=metadata.description,
-                    authors=metadata.authors,
-                    date_published=metadata.date_published,
-                    tags="; ".join(metadata.tags) if metadata.tags else None,
-                    is_qda_file=is_qda,
-                    downloaded_at=datetime.utcnow(),
-                )
-                session.add(file_record)
-                session.commit()
-                downloaded_count += 1
+            file_record = File(
+                source_name=source,
+                source_url=result.source_url,
+                download_url=download_url,
+                file_name=fname,
+                file_type=file_ext,
+                file_hash=file_hash,
+                file_size_bytes=finfo.get("size"),
+                local_path=local_path,
+                license_type=metadata.license_type,
+                license_url=metadata.license_url,
+                title=metadata.title,
+                description=metadata.description,
+                authors=metadata.authors,
+                date_published=metadata.date_published,
+                tags="; ".join(metadata.tags) if metadata.tags else None,
+                is_qda_file=is_qda,
+                downloaded_at=datetime.utcnow(),
+            )
+            session.add(file_record)
+            session.commit()
+            downloaded_count += 1
 
-                label = "[green]QDA[/green]" if is_qda else "[blue]file[/blue]"
-                console.print(f"  {label} {fname} ({finfo.get('size', '?')} bytes)")
+            label = "[green]QDA[/green]" if is_qda else "[blue]file[/blue]"
+            console.print(f"  {label} {fname} ({finfo.get('size', '?')} bytes)")
+
+    return downloaded_count, restricted_count, skipped_count
+
+
+@cli.command()
+@click.argument("source")
+@click.option("--limit", "-n", default=None, type=int, help="Max datasets per query.")
+@click.option("--query", "-q", default=None, help="Search query string.")
+@click.option(
+    "--queries-file", "-f", default=None,
+    type=click.Path(exists=True),
+    help="Text file with one search query per line.",
+)
+def scrape(
+    source: str, limit: int | None, query: str | None, queries_file: str | None
+) -> None:
+    """Scrape and download data from a source."""
+    connector = _get_connector(source)
+
+    # Build list of queries
+    if queries_file:
+        queries = [
+            line.strip() for line in Path(queries_file).read_text().splitlines()
+            if line.strip() and not line.strip().startswith("#")
+        ]
+    elif query:
+        queries = [query]
+    else:
+        queries = ["qualitative"]
+
+    session = get_session()
+    total_downloaded = 0
+    total_restricted = 0
+    total_skipped = 0
+    seen_urls: set[str] = set()
+
+    try:
+        for qi, q in enumerate(queries, 1):
+            console.print(
+                f"\n[bold]=== Query {qi}/{len(queries)}: '{q}' ===[/bold]"
+            )
+
+            try:
+                results = connector.search(q)
+            except Exception as e:
+                console.print(f"[red]Search failed: {e}[/red]")
+                continue
+
+            # Deduplicate across queries by source_url
+            results = [r for r in results if r.source_url not in seen_urls]
+            seen_urls.update(r.source_url for r in results)
+
+            if limit:
+                results = results[:limit]
+
+            console.print(f"Found {len(results)} new datasets to process.")
+
+            if not results:
+                continue
+
+            dl, rest, skip = _scrape_results(connector, source, results, session)
+            total_downloaded += dl
+            total_restricted += rest
+            total_skipped += skip
 
     finally:
         session.close()
 
     console.print(
-        f"\n[bold]Done.[/bold] Downloaded: {downloaded_count}, "
-        f"Restricted (metadata only): {restricted_count}, "
-        f"Skipped (license): {skipped_count}"
+        f"\n[bold]All done.[/bold] Queries: {len(queries)}, "
+        f"Downloaded: {total_downloaded}, "
+        f"Restricted (metadata only): {total_restricted}, "
+        f"Skipped (license): {total_skipped}"
     )
 
 
