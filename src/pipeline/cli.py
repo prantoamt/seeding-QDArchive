@@ -413,10 +413,40 @@ def status() -> None:
         console.print(f"[bold]QDA files:[/bold]        {qda}")
         console.print(f"[bold]Downloaded files:[/bold] {downloaded}")
 
+        restricted = session.query(File).filter(File.restricted.is_(True)).count()
+        console.print(f"[bold]Restricted:[/bold]      {restricted}")
+
         if source_counts:
             console.print("\n[bold]By source:[/bold]")
             for src, count in source_counts:
                 console.print(f"  {src:<15} {count}")
+
+        # Language breakdown
+        lang_counts = (
+            session.query(File.language, func.count(File.id))
+            .filter(File.language.isnot(None))
+            .group_by(File.language)
+            .order_by(func.count(File.id).desc())
+            .limit(10)
+            .all()
+        )
+        if lang_counts:
+            console.print("\n[bold]By language:[/bold]")
+            for lang, count in lang_counts:
+                console.print(f"  {lang:<30} {count}")
+
+        # Software breakdown
+        sw_counts = (
+            session.query(File.software, func.count(File.id))
+            .filter(File.software.isnot(None))
+            .group_by(File.software)
+            .order_by(func.count(File.id).desc())
+            .all()
+        )
+        if sw_counts:
+            console.print("\n[bold]By software:[/bold]")
+            for sw, count in sw_counts:
+                console.print(f"  {sw:<30} {count}")
     finally:
         session.close()
 
@@ -425,18 +455,56 @@ def status() -> None:
 @click.option("--source", "-s", default=None, help="Filter by source name.")
 @click.option("--qda-only", is_flag=True, help="Show only QDA files.")
 @click.option("--restricted-only", is_flag=True, help="Show only restricted files.")
+@click.option("--search", default=None, help="Search title, description, keywords, tags.")
+@click.option("--language", default=None, help="Filter by language (substring match).")
+@click.option("--software", default=None, help="Filter by software (substring match).")
+@click.option("--file-type", "file_type", default=None, help="Filter by file type (e.g. .pdf).")
+@click.option("--has-software", is_flag=True, help="Show only records with software info.")
+@click.option("--has-keywords", is_flag=True, help="Show only records with keywords.")
 @click.option("--limit", "-n", default=50, type=int, help="Max rows to display.")
-def db_view(source: str | None, qda_only: bool, restricted_only: bool, limit: int) -> None:
+def db_view(
+    source: str | None,
+    qda_only: bool,
+    restricted_only: bool,
+    search: str | None,
+    language: str | None,
+    software: str | None,
+    file_type: str | None,
+    has_software: bool,
+    has_keywords: bool,
+    limit: int,
+) -> None:
     """Browse the metadata database."""
     session = get_session()
     try:
+        from sqlalchemy import or_
+
         query = session.query(File)
         if source:
             query = query.filter(File.source_name == source)
         if qda_only:
             query = query.filter(File.is_qda_file.is_(True))
         if restricted_only:
-            query = query.filter(File.local_path.is_(None))
+            query = query.filter(File.restricted.is_(True))
+        if search:
+            pattern = f"%{search}%"
+            query = query.filter(or_(
+                File.title.ilike(pattern),
+                File.description.ilike(pattern),
+                File.keywords.ilike(pattern),
+                File.tags.ilike(pattern),
+            ))
+        if language:
+            query = query.filter(File.language.ilike(f"%{language}%"))
+        if software:
+            query = query.filter(File.software.ilike(f"%{software}%"))
+        if file_type:
+            ft = file_type if file_type.startswith(".") else f".{file_type}"
+            query = query.filter(File.file_type == ft)
+        if has_software:
+            query = query.filter(File.software.isnot(None))
+        if has_keywords:
+            query = query.filter(File.keywords.isnot(None))
 
         total = query.count()
         records = query.order_by(File.id).limit(limit).all()

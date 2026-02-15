@@ -146,7 +146,13 @@ pipeline db [options]
 |---|---|---|---|
 | `--source` | `-s` | all | Filter by source name |
 | `--qda-only` | | `false` | Show only QDA files |
-| `--restricted-only` | | `false` | Show only restricted (not downloaded) files |
+| `--restricted-only` | | `false` | Show only restricted files (uses `restricted` column) |
+| `--search` | | | Case-insensitive substring search across title, description, keywords, tags |
+| `--language` | | | Filter by language (case-insensitive substring match) |
+| `--software` | | | Filter by software (case-insensitive substring match) |
+| `--file-type` | | | Filter by file type extension (e.g. `.pdf`). Auto-prepends `.` if missing |
+| `--has-software` | | `false` | Show only records that have software info |
+| `--has-keywords` | | `false` | Show only records that have keywords |
 | `--limit` | `-n` | `50` | Max rows to display |
 
 ### Table Columns
@@ -173,8 +179,23 @@ pdm run pipeline db --qda-only
 # Show restricted files from QDR, up to 100
 pdm run pipeline db -s qdr --restricted-only -n 100
 
+# Search across title, description, keywords, tags
+pdm run pipeline db --search "interview"
+
+# Filter by language or software
+pdm run pipeline db --language english
+pdm run pipeline db --software nvivo
+
+# Filter by file type (dot is auto-prepended)
+pdm run pipeline db --file-type pdf
+
+# Show records that have software or keyword metadata
+pdm run pipeline db --has-software
+pdm run pipeline db --has-keywords
+
 # Combine filters
 pdm run pipeline db -s qdr --qda-only
+pdm run pipeline db --language english --has-software
 ```
 
 ---
@@ -222,7 +243,7 @@ pdm run pipeline show 1 2 3 4 5
 
 ## `pipeline status`
 
-Show a summary of the collection progress: total records, QDA file count, downloaded file count, and per-source breakdown.
+Show a summary of the collection progress: total records, QDA file count, downloaded file count, restricted count, and breakdowns by source, language, and software.
 
 ```bash
 pdm run pipeline status
@@ -234,9 +255,17 @@ pdm run pipeline status
 Total records:    59
 QDA files:        2
 Downloaded files: 19
+Restricted:       8
 
 By source:
   qdr             59
+
+By language:
+  English                        42
+  German                         7
+
+By software:
+  NVivo 12                       3
 ```
 
 ---
@@ -283,7 +312,9 @@ pipeline export [options]
 ```
 id, source_name, source_url, download_url, file_name, file_type, file_hash,
 file_size_bytes, local_path, license_type, license_url, title, description,
-authors, date_published, tags, is_qda_file, downloaded_at, created_at, notes
+authors, date_published, tags, keywords, kind_of_data, language, content_type,
+friendly_type, software, geographic_coverage, restricted, api_checksum,
+is_qda_file, downloaded_at, created_at, notes
 ```
 
 ### Examples

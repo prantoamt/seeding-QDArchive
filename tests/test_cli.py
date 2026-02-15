@@ -47,11 +47,15 @@ def sample_records():
         source_name="qdr", file_name="analysis.qdpx", file_type=".qdpx",
         title="Test Dataset", authors="Smith, J.", is_qda_file=True,
         file_size_bytes=1024, notes="access restricted (403)",
+        keywords="qualitative research; interviews", language="English",
+        software="NVivo 12", restricted=True,
     ))
     session.add(File(
         source_name="qdr", file_name="transcript.pdf", file_type=".pdf",
         title="Test Dataset", authors="Smith, J.", is_qda_file=False,
         file_size_bytes=2048, local_path="/tmp/transcript.pdf", file_hash="abc123",
+        keywords="focus groups", language="German",
+        software=None, restricted=False,
     ))
     session.commit()
     session.close()
@@ -169,3 +173,73 @@ def test_search_with_connector(runner):
 
     assert result.exit_code == 0
     assert "Test Dataset" in result.output
+
+
+def test_db_search(runner, sample_records):
+    result = runner.invoke(cli, ["db", "--search", "interview"])
+    assert result.exit_code == 0
+    assert "analysis.qdpx" in result.output
+    assert "transcript.pdf" not in result.output
+
+
+def test_db_language(runner, sample_records):
+    result = runner.invoke(cli, ["db", "--language", "english"])
+    assert result.exit_code == 0
+    assert "analysis.qdpx" in result.output
+    assert "transcript.pdf" not in result.output
+
+
+def test_db_software(runner, sample_records):
+    result = runner.invoke(cli, ["db", "--software", "nvivo"])
+    assert result.exit_code == 0
+    assert "analysis.qdpx" in result.output
+    assert "transcript.pdf" not in result.output
+
+
+def test_db_file_type(runner, sample_records):
+    result = runner.invoke(cli, ["db", "--file-type", ".pdf"])
+    assert result.exit_code == 0
+    assert "transcript.p" in result.output
+    assert "analysis.qdpx" not in result.output
+
+
+def test_db_file_type_auto_dot(runner, sample_records):
+    result = runner.invoke(cli, ["db", "--file-type", "pdf"])
+    assert result.exit_code == 0
+    assert "transcript.p" in result.output
+    assert "analysis.qdpx" not in result.output
+
+
+def test_db_has_software(runner, sample_records):
+    result = runner.invoke(cli, ["db", "--has-software"])
+    assert result.exit_code == 0
+    assert "analysis.qdpx" in result.output
+    assert "transcript.pdf" not in result.output
+
+
+def test_db_has_keywords(runner, sample_records):
+    result = runner.invoke(cli, ["db", "--has-keywords"])
+    assert result.exit_code == 0
+    assert "analysis.qdpx" in result.output
+    assert "transcript.p" in result.output
+
+
+def test_db_restricted_only_uses_column(runner, sample_records):
+    """Verify --restricted-only filters by the restricted column, not local_path."""
+    result = runner.invoke(cli, ["db", "--restricted-only"])
+    assert result.exit_code == 0
+    # Record 1 has restricted=True, record 2 has restricted=False
+    assert "analysis.qdpx" in result.output
+    assert "transcript.pdf" not in result.output
+
+
+def test_status_extended(runner, sample_records):
+    result = runner.invoke(cli, ["status"])
+    assert result.exit_code == 0
+    assert "Restricted:" in result.output
+    assert "1" in result.output  # one restricted record
+    assert "By language:" in result.output
+    assert "English" in result.output
+    assert "German" in result.output
+    assert "By software:" in result.output
+    assert "NVivo 12" in result.output
