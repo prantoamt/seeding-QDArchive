@@ -1,15 +1,24 @@
 """CLI entry point for the pipeline."""
 
+import logging
+from datetime import datetime
+from pathlib import Path
+
 import click
 from rich.console import Console
+from rich.table import Table
 
-from pipeline.config import EXPORTS_DIR, ensure_dirs
+from pipeline.config import EXPORTS_DIR, QDA_EXTENSIONS, ensure_dirs
+from pipeline.connectors import CONNECTORS
 from pipeline.db.connection import get_session, init_db
 from pipeline.db.export import export_to_csv
 from pipeline.db.models import File
+from pipeline.storage.file_manager import compute_sha256, get_storage_path
+from pipeline.utils.license import is_open_license
 from pipeline.utils.logging import setup_logging
 
 console = Console()
+logger = logging.getLogger("pipeline")
 
 
 @click.group()
@@ -20,23 +29,167 @@ def cli() -> None:
     setup_logging()
 
 
+def _get_connector(source: str):
+    """Look up a connector by source name, or exit with an error."""
+    connector = CONNECTORS.get(source)
+    if connector is None:
+        available = ", ".join(CONNECTORS.keys())
+        console.print(f"[red]Unknown source '{source}'. Available: {available}[/red]")
+        raise SystemExit(1)
+    return connector
+
+
 @cli.command()
 @click.argument("source")
-@click.option("--query", "-q", default=None, help="Search query string.")
+@click.option("--query", "-q", default="qualitative", help="Search query string.")
 @click.option("--file-type", "-t", default=None, help="Filter by file type extension.")
-def search(source: str, query: str | None, file_type: str | None) -> None:
+def search(source: str, query: str, file_type: str | None) -> None:
     """Search a data source for qualitative data."""
-    console.print(f"[bold]Search[/bold] source={source} query={query} file_type={file_type}")
-    console.print("[yellow]Not yet implemented — connectors coming soon.[/yellow]")
+    connector = _get_connector(source)
+
+    console.print(f"[bold]Searching {source}[/bold] for '{query}'...")
+    try:
+        results = connector.search(query, file_type)
+    except Exception as e:
+        console.print(f"[red]Search failed: {e}[/red]")
+        raise SystemExit(1) from e
+
+    if not results:
+        console.print("[yellow]No results found.[/yellow]")
+        return
+
+    table = Table(title=f"Search results from {source} ({len(results)} datasets)")
+    table.add_column("#", style="dim", width=4)
+    table.add_column("Title", max_width=60)
+    table.add_column("Authors", max_width=30)
+    table.add_column("Published", width=12)
+
+    for i, r in enumerate(results, 1):
+        table.add_row(
+            str(i),
+            r.title[:60],
+            r.authors[:30] if r.authors else "",
+            r.date_published[:10] if r.date_published else "",
+        )
+
+    console.print(table)
 
 
 @cli.command()
 @click.argument("source")
-@click.option("--limit", "-n", default=None, type=int, help="Max records to scrape.")
-def scrape(source: str, limit: int | None) -> None:
+@click.option("--limit", "-n", default=None, type=int, help="Max datasets to scrape.")
+@click.option("--query", "-q", default="qualitative", help="Search query string.")
+def scrape(source: str, limit: int | None, query: str) -> None:
     """Scrape and download data from a source."""
-    console.print(f"[bold]Scrape[/bold] source={source} limit={limit}")
-    console.print("[yellow]Not yet implemented — connectors coming soon.[/yellow]")
+    connector = _get_connector(source)
+
+    console.print(f"[bold]Scraping {source}[/bold] query='{query}' limit={limit}")
+
+    # Step 1: Search for datasets
+    try:
+        results = connector.search(query)
+    except Exception as e:
+        console.print(f"[red]Search failed: {e}[/red]")
+        raise SystemExit(1) from e
+
+    if limit:
+        results = results[:limit]
+
+    console.print(f"Found {len(results)} datasets to process.")
+
+    session = get_session()
+    downloaded_count = 0
+    skipped_count = 0
+
+    try:
+        for i, result in enumerate(results, 1):
+            console.print(f"\n[bold][{i}/{len(results)}][/bold] {result.title[:70]}")
+
+            # Step 2: Get full metadata
+            try:
+                metadata = connector.get_metadata(result.source_url)
+            except Exception as e:
+                console.print(f"  [red]Metadata fetch failed: {e}[/red]")
+                continue
+
+            # Step 3: Check license
+            if not is_open_license(metadata.license_type):
+                console.print(
+                    f"  [yellow]Skipping — license not open: "
+                    f"'{metadata.license_type or 'none'}'[/yellow]"
+                )
+                skipped_count += 1
+                continue
+
+            if not metadata.files:
+                console.print("  [yellow]No files in this dataset.[/yellow]")
+                continue
+
+            # Step 4: Download each file
+            for finfo in metadata.files:
+                fname = finfo["name"]
+                download_url = finfo["download_url"]
+                file_ext = Path(fname).suffix.lower()
+
+                # Determine if it's a QDA file
+                is_qda = file_ext in QDA_EXTENSIONS
+
+                # Build storage path
+                if "persistentId=" in result.source_url:
+                    record_id = result.source_url.split("persistentId=")[-1]
+                else:
+                    record_id = str(finfo["id"])
+                # Sanitize record_id for use as directory name
+                record_id = record_id.replace("/", "_").replace(":", "_")
+                dest_dir = str(get_storage_path(source, record_id, "").parent)
+
+                try:
+                    local_path = connector.download(download_url, dest_dir)
+                except Exception as e:
+                    console.print(f"  [red]Download failed for {fname}: {e}[/red]")
+                    continue
+
+                # Compute hash
+                file_hash = compute_sha256(Path(local_path))
+
+                # Check for duplicate by hash
+                existing = session.query(File).filter_by(file_hash=file_hash).first()
+                if existing:
+                    console.print(f"  [dim]Duplicate (hash match): {fname}[/dim]")
+                    Path(local_path).unlink(missing_ok=True)
+                    continue
+
+                # Save to DB
+                file_record = File(
+                    source_name=source,
+                    source_url=result.source_url,
+                    download_url=download_url,
+                    file_name=fname,
+                    file_type=file_ext,
+                    file_hash=file_hash,
+                    file_size_bytes=finfo.get("size"),
+                    local_path=local_path,
+                    license_type=metadata.license_type,
+                    license_url=metadata.license_url,
+                    title=metadata.title,
+                    description=metadata.description,
+                    authors=metadata.authors,
+                    date_published=metadata.date_published,
+                    tags="; ".join(metadata.tags) if metadata.tags else None,
+                    is_qda_file=is_qda,
+                    downloaded_at=datetime.utcnow(),
+                )
+                session.add(file_record)
+                session.commit()
+                downloaded_count += 1
+
+                label = "[green]QDA[/green]" if is_qda else "[blue]file[/blue]"
+                console.print(f"  {label} {fname} ({finfo.get('size', '?')} bytes)")
+
+    finally:
+        session.close()
+
+    console.print(f"\n[bold]Done.[/bold] Downloaded: {downloaded_count}, Skipped: {skipped_count}")
 
 
 @cli.command("export")
@@ -46,8 +199,6 @@ def export_cmd(fmt: str, output: str | None) -> None:
     """Export the metadata database."""
     if output is None:
         output = str(EXPORTS_DIR / f"metadata.{fmt}")
-
-    from pathlib import Path
 
     count = export_to_csv(Path(output))
     console.print(f"Exported {count} records to {output}")
@@ -62,9 +213,23 @@ def status() -> None:
         qda = session.query(File).filter(File.is_qda_file.is_(True)).count()
         downloaded = session.query(File).filter(File.local_path.isnot(None)).count()
 
-        console.print(f"Total records:    {total}")
-        console.print(f"QDA files:        {qda}")
-        console.print(f"Downloaded files: {downloaded}")
+        # Per-source counts
+        from sqlalchemy import func
+
+        source_counts = (
+            session.query(File.source_name, func.count(File.id))
+            .group_by(File.source_name)
+            .all()
+        )
+
+        console.print(f"[bold]Total records:[/bold]    {total}")
+        console.print(f"[bold]QDA files:[/bold]        {qda}")
+        console.print(f"[bold]Downloaded files:[/bold] {downloaded}")
+
+        if source_counts:
+            console.print("\n[bold]By source:[/bold]")
+            for src, count in source_counts:
+                console.print(f"  {src:<15} {count}")
     finally:
         session.close()
 
@@ -72,17 +237,22 @@ def status() -> None:
 @cli.command("list-sources")
 def list_sources() -> None:
     """List available data source connectors."""
-    sources = [
-        ("zenodo", "Zenodo API", "planned"),
-        ("dryad", "Dryad API", "planned"),
-        ("dataverse", "Dataverse API (QDR, DANS, DataverseNO)", "planned"),
-        ("ukds", "UK Data Service (scraper)", "planned"),
-        ("qualidata", "QualidataNet (scraper)", "planned"),
-        ("qualiservice", "Qualiservice (scraper)", "planned"),
-    ]
     console.print("[bold]Available sources:[/bold]\n")
-    for name, desc, state in sources:
-        console.print(f"  {name:<15} {desc:<45} [{state}]")
+    for name, connector in CONNECTORS.items():
+        console.print(f"  {name:<15} {connector.name:<45} [green]ready[/green]")
+
+    planned = [
+        ("zenodo", "Zenodo API"),
+        ("dryad", "Dryad API"),
+        ("dans", "DANS Dataverse"),
+        ("dataverseno", "DataverseNO"),
+        ("ukds", "UK Data Service (scraper)"),
+        ("qualidata", "QualidataNet (scraper)"),
+        ("qualiservice", "Qualiservice (scraper)"),
+    ]
+    for name, desc in planned:
+        if name not in CONNECTORS:
+            console.print(f"  {name:<15} {desc:<45} [yellow]planned[/yellow]")
 
 
 if __name__ == "__main__":
