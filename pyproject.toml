@@ -1,0 +1,44 @@
+[project]
+name = "seeding-qdarchive"
+version = "0.1.0"
+description = "Seed the QDArchive web service with open qualitative research data"
+authors = [
+    {name = "Md Badiuzzaman Pranto", email = "prantoamt@gmail.com"},
+]
+dependencies = [
+    "httpx>=0.27",
+    "click>=8.1",
+    "sqlalchemy>=2.0",
+    "beautifulsoup4>=4.12",
+    "rich>=13.0",
+]
+requires-python = ">=3.10"
+readme = "README.md"
+license = {text = "MIT"}
+
+[project.scripts]
+pipeline = "pipeline.cli:cli"
+
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
+
+[tool.pdm]
+distribution = true
+package-dir = "src"
+
+[tool.pdm.dev-dependencies]
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.4",
+]
+
+[tool.ruff]
+src = ["src"]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

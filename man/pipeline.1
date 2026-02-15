@@ -1,0 +1,127 @@
+.TH PIPELINE 1 "February 2026" "seeding-qdarchive 0.1.0" "User Commands"
+.SH NAME
+pipeline \- Seeding QDArchive data acquisition and classification pipeline
+.SH SYNOPSIS
+.B pdm run pipeline
+.RI [ command ]
+.RI [ options ]
+.SH DESCRIPTION
+.B pipeline
+is a CLI tool for acquiring and classifying open qualitative research data
+to seed the QDArchive web service. It searches repositories, downloads files,
+stores metadata in a local SQLite database, and exports results to CSV.
+.PP
+Targeted data includes QDA project files (qdpx, REFI, MAXQDA, NVivo,
+ATLAS.ti, Dedoose, QDAcity, QDA Miner) and general qualitative research
+data (interview transcripts, research articles).
+.SH COMMANDS
+.TP
+.B search \fIsource\fR [\-q \fIquery\fR] [\-t \fItype\fR]
+Search a data source for qualitative data records.
+.RS
+.TP
+.I source
+Name of the data source connector (see \fBlist\-sources\fR).
+.TP
+.BI \-q " query" ", \-\-query " query
+Free-text search query string.
+.TP
+.BI \-t " type" ", \-\-file\-type " type
+Filter results by file extension (e.g. qdpx, pdf, txt).
+.RE
+.TP
+.B scrape \fIsource\fR [\-n \fIlimit\fR]
+Scrape and download data from a source. Use \fBall\fR as the source
+name to scrape every configured connector.
+.RS
+.TP
+.I source
+Name of the data source connector, or \fBall\fR.
+.TP
+.BI \-n " limit" ", \-\-limit " limit
+Maximum number of records to process. Omit to process all available records.
+.RE
+.TP
+.B export [\-\-format \fIfmt\fR] [\-o \fIfile\fR]
+Export the metadata database to a file.
+.RS
+.TP
+.BI \-\-format " fmt"
+Output format. Currently only \fBcsv\fR is supported (default: csv).
+.TP
+.BI \-o " file" ", \-\-output " file
+Path to the output file. Defaults to \fIexports/metadata.csv\fR.
+.RE
+.TP
+.B status
+Display pipeline statistics: total records, QDA file count, and
+number of downloaded files.
+.TP
+.B list\-sources
+List all available data source connectors and their current status
+(active or planned).
+.SH DATA SOURCES
+.TS
+l l l.
+Name	Description	Type
+_
+zenodo	Zenodo open research repository	API
+dryad	Dryad digital data repository	API
+dataverse	Dataverse instances (QDR, DANS, DataverseNO)	API
+ukds	UK Data Service	Scraper
+qualidata	QualidataNet	Scraper
+qualiservice	Qualiservice	Scraper
+.TE
+.SH FILES
+.TP
+.I pipeline.db
+SQLite database storing file metadata (auto-created on first run).
+.TP
+.I data/{source}/{record_id}/{filename}
+Downloaded files, organized by source and record.
+.TP
+.I exports/metadata.csv
+Default CSV export location.
+.TP
+.I pipeline.log
+Log file with debug-level output from all pipeline operations.
+.SH ENVIRONMENT
+The pipeline requires Python 3.10+ and is managed with PDM.
+Dependencies are installed via \fBpdm install\fR. All commands are
+invoked through \fBpdm run pipeline\fR.
+.SH EXAMPLES
+Search Zenodo for QDA project files:
+.PP
+.RS
+.nf
+pdm run pipeline search zenodo \-q "qualitative interview" \-t qdpx
+.fi
+.RE
+.PP
+Scrape up to 50 records from Dryad:
+.PP
+.RS
+.nf
+pdm run pipeline scrape dryad \-n 50
+.fi
+.RE
+.PP
+Export all metadata to a custom path:
+.PP
+.RS
+.nf
+pdm run pipeline export \-o results/my_export.csv
+.fi
+.RE
+.PP
+Check how many files have been collected:
+.PP
+.RS
+.nf
+pdm run pipeline status
+.fi
+.RE
+.SH AUTHORS
+Md Badiuzzaman Pranto <prantoamt@gmail.com>
+.SH SEE ALSO
+Project repository and CLAUDE.md for development guidelines.
