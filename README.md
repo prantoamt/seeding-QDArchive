@@ -63,6 +63,53 @@ pdm run pipeline export                              # Export to CSV
 
 > **Full CLI documentation:** See [manual.md](manual.md) for all commands, options, and examples.
 
+## Architecture
+
+```mermaid
+flowchart TB
+    subgraph CLI["CLI (Click)"]
+        search["search"]
+        scrape["scrape"]
+        db["db / show"]
+        export["export"]
+        status["status"]
+    end
+
+    subgraph Connectors["Connectors"]
+        direction TB
+        base["BaseConnector"]
+        dv["DataverseConnector"]
+        zen["ZenodoConnector"]
+        dry["DryadConnector"]
+        scr["Web Scrapers"]
+        base -.->|implements| dv
+        base -.->|implements| zen
+        base -.->|implements| dry
+        base -.->|implements| scr
+    end
+
+    subgraph Instances["Dataverse Instances"]
+        qdr["QDR"]
+        dans["DANS"]
+        dvno["DataverseNO"]
+    end
+
+    subgraph Storage["Local Storage"]
+        sqlite[("SQLite DB")]
+        files["data/{source}/{id}/{file}"]
+        csv["exports/metadata.csv"]
+    end
+
+    search --> Connectors
+    scrape --> Connectors
+    dv --> Instances
+    scrape -->|"license check\nSHA-256 hash"| Storage
+    db --> sqlite
+    export --> csv
+    status --> sqlite
+    Connectors -->|"search / metadata / download"| Storage
+```
+
 ## Project Structure
 
 ```
