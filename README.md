@@ -7,9 +7,10 @@
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-3776AB?logo=python&logoColor=white)](https://python.org)
 [![PDM](https://img.shields.io/badge/pdm-managed-blueviolet)](https://pdm-project.org)
 [![Code style: Ruff](https://img.shields.io/badge/code%20style-ruff-000000?logo=ruff&logoColor=white)](https://docs.astral.sh/ruff/)
+
 ---
 
-*Academic project (10 ECTS) — FAU Erlangen-Nurnberg*
+_Academic project (10 ECTS) — FAU Erlangen-Nurnberg_
 
 </div>
 
@@ -19,21 +20,21 @@ This pipeline searches open qualitative data repositories, downloads files and m
 
 The project has two parts:
 
-| | Phase | Deliverable | Deadline |
-|---|---|---|---|
-| **1** | Data Acquisition | Metadata DB + downloaded files | March 15 |
+|       | Phase               | Deliverable                      | Deadline |
+| ----- | ------------------- | -------------------------------- | -------- |
+| **1** | Data Acquisition    | Metadata DB + downloaded files   | March 15 |
 | **2** | Data Classification | Merged DB with ISIC Rev. 5 codes | April 12 |
 
 ## Data Sources
 
-| Source | Type | Coverage |
-|---|---|---|
-| [Zenodo](https://zenodo.org) | API | Open research repository |
-| [Dryad](https://datadryad.org) | API | Digital data repository |
-| [Dataverse](https://dataverse.org) | API | QDR, DANS, DataverseNO |
-| [UK Data Service](https://ukdataservice.ac.uk) | Scraper | UK national data archive |
-| [QualidataNet](https://qualidata.net) | Scraper | Qualitative data network |
-| [Qualiservice](https://qualiservice.org) | Scraper | German qualitative data service |
+| Source                                         | Type    | Coverage                        |
+| ---------------------------------------------- | ------- | ------------------------------- |
+| [Zenodo](https://zenodo.org)                   | API     | Open research repository        |
+| [Dryad](https://datadryad.org)                 | API     | Digital data repository         |
+| [Dataverse](https://dataverse.org)             | API     | QDR, DANS, DataverseNO          |
+| [UK Data Service](https://ukdataservice.ac.uk) | Scraper | UK national data archive        |
+| [QualidataNet](https://qualidata.net)          | Scraper | Qualitative data network        |
+| [Qualiservice](https://qualiservice.org)       | Scraper | German qualitative data service |
 
 ## Quick Start
 
@@ -45,7 +46,7 @@ The project has two parts:
 ### Installation
 
 ```bash
-git clone <repo-url> && cd seeding-QDArchive
+git clone git@github.com:prantoamt/seeding-QDArchive.git && cd seeding-QDArchive
 pdm install
 ```
 
@@ -88,6 +89,7 @@ src/pipeline/
 ```
 
 **Data layout on disk:**
+
 ```
 data/{source_name}/{record_id}/{filename}
 ```
@@ -103,12 +105,12 @@ man man/pipeline.1            # View CLI manual
 
 ## Tech Stack
 
-| Tool | Role |
-|---|---|
-| [httpx](https://www.python-httpx.org/) | HTTP client for API calls |
-| [Click](https://click.palletsprojects.com/) | CLI framework |
-| [SQLAlchemy](https://www.sqlalchemy.org/) | ORM for SQLite metadata DB |
-| [Beautiful Soup](https://www.crummy.com/software/BeautifulSoup/) | HTML scraping |
-| [Rich](https://rich.readthedocs.io/) | Terminal formatting and progress |
-| [Ruff](https://docs.astral.sh/ruff/) | Linting and formatting |
-| [pytest](https://docs.pytest.org/) | Testing |
+| Tool                                                             | Role                             |
+| ---------------------------------------------------------------- | -------------------------------- |
+| [httpx](https://www.python-httpx.org/)                           | HTTP client for API calls        |
+| [Click](https://click.palletsprojects.com/)                      | CLI framework                    |
+| [SQLAlchemy](https://www.sqlalchemy.org/)                        | ORM for SQLite metadata DB       |
+| [Beautiful Soup](https://www.crummy.com/software/BeautifulSoup/) | HTML scraping                    |
+| [Rich](https://rich.readthedocs.io/)                             | Terminal formatting and progress |
+| [Ruff](https://docs.astral.sh/ruff/)                             | Linting and formatting           |
+| [pytest](https://docs.pytest.org/)                               | Testing                          |
