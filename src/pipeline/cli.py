@@ -410,53 +410,94 @@ def status() -> None:
         qda = session.query(File).filter(File.is_qda_file.is_(True)).count()
         downloaded = session.query(File).filter(File.local_path.isnot(None)).count()
 
-        # Per-source counts
-        from sqlalchemy import func
+        from sqlalchemy import case, func
 
-        source_counts = (
-            session.query(File.source_name, func.count(File.id))
-            .group_by(File.source_name)
-            .all()
-        )
+        restricted = session.query(File).filter(File.restricted.is_(True)).count()
 
         console.print(f"[bold]Total records:[/bold]    {total}")
         console.print(f"[bold]QDA files:[/bold]        {qda}")
         console.print(f"[bold]Downloaded files:[/bold] {downloaded}")
-
-        restricted = session.query(File).filter(File.restricted.is_(True)).count()
         console.print(f"[bold]Restricted:[/bold]      {restricted}")
 
-        if source_counts:
-            console.print("\n[bold]By source:[/bold]")
-            for src, count in source_counts:
-                console.print(f"  {src:<15} {count}")
+        # Reusable aggregation columns
+        col_total = func.count(File.id).label("total")
+        col_qda = func.sum(case((File.is_qda_file.is_(True), 1), else_=0)).label(
+            "qda"
+        )
+        col_dl = func.sum(
+            case((File.local_path.isnot(None), 1), else_=0)
+        ).label("downloaded")
+        col_restricted = func.sum(
+            case((File.restricted.is_(True), 1), else_=0)
+        ).label("restricted")
 
-        # Language breakdown
-        lang_counts = (
-            session.query(File.language, func.count(File.id))
+        def _print_breakdown(title: str, rows: list, name_width: int = 30) -> None:
+            if not rows:
+                return
+            console.print(f"\n[bold]{title}[/bold]")
+            header = f"  {'':>{name_width}}  {'Total':>7}  {'QDA':>5}  {'Down':>7}  {'Restr':>7}"
+            console.print(f"[dim]{header}[/dim]")
+            for name, t, q, d, r in rows:
+                console.print(
+                    f"  {name:>{name_width}}  {t:>7}  {q:>5}  {d:>7}  {r:>7}"
+                )
+
+        # Per-source breakdown
+        source_rows = (
+            session.query(
+                File.source_name, col_total, col_qda, col_dl, col_restricted
+            )
+            .group_by(File.source_name)
+            .order_by(col_total.desc())
+            .all()
+        )
+        _print_breakdown("By source:", source_rows, name_width=20)
+
+        # Language breakdown (top 10)
+        lang_rows = (
+            session.query(File.language, col_total, col_qda, col_dl, col_restricted)
             .filter(File.language.isnot(None))
             .group_by(File.language)
-            .order_by(func.count(File.id).desc())
+            .order_by(col_total.desc())
             .limit(10)
             .all()
         )
-        if lang_counts:
-            console.print("\n[bold]By language:[/bold]")
-            for lang, count in lang_counts:
-                console.print(f"  {lang:<30} {count}")
+        _print_breakdown("By language:", lang_rows, name_width=35)
 
         # Software breakdown
-        sw_counts = (
-            session.query(File.software, func.count(File.id))
+        sw_rows = (
+            session.query(File.software, col_total, col_qda, col_dl, col_restricted)
             .filter(File.software.isnot(None))
             .group_by(File.software)
-            .order_by(func.count(File.id).desc())
+            .order_by(col_total.desc())
             .all()
         )
-        if sw_counts:
-            console.print("\n[bold]By software:[/bold]")
-            for sw, count in sw_counts:
-                console.print(f"  {sw:<30} {count}")
+        _print_breakdown("By software:", sw_rows, name_width=35)
+
+        # File type breakdown (top 15)
+        ft_rows = (
+            session.query(
+                File.file_type, col_total, col_qda, col_dl, col_restricted
+            )
+            .filter(File.file_type.isnot(None))
+            .group_by(File.file_type)
+            .order_by(col_total.desc())
+            .limit(15)
+            .all()
+        )
+        _print_breakdown("By file type:", ft_rows, name_width=20)
+
+        # License type breakdown
+        lic_rows = (
+            session.query(
+                File.license_type, col_total, col_qda, col_dl, col_restricted
+            )
+            .filter(File.license_type.isnot(None))
+            .group_by(File.license_type)
+            .order_by(col_total.desc())
+            .all()
+        )
+        _print_breakdown("By license:", lic_rows, name_width=35)
     finally:
         session.close()
 

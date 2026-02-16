@@ -243,7 +243,7 @@ pdm run pipeline show 1 2 3 4 5
 
 ## `pipeline status`
 
-Show a summary of the collection progress: total records, QDA file count, downloaded file count, restricted count, and breakdowns by source, language, and software.
+Show a summary of the collection progress: total records, QDA file count, downloaded file count, restricted count, and breakdowns by source, language, software, file type (top 15), and license. Each breakdown row includes columns for **Total**, **QDA**, **Downloaded**, and **Restricted**.
 
 ```bash
 pdm run pipeline status
@@ -252,20 +252,38 @@ pdm run pipeline status
 ### Example Output
 
 ```
-Total records:    59
-QDA files:        2
-Downloaded files: 19
-Restricted:       8
+Total records:    25411
+QDA files:        8
+Downloaded files: 11319
+Restricted:      14092
 
 By source:
-  qdr             59
+                          Total    QDA     Down    Restr
+                   qdr    25411      8    11319    14092
 
 By language:
-  English                        42
-  German                         7
+                                         Total    QDA     Down    Restr
+                              English    16154      7    10937     5217
+  English; French; Spanish, Castilian      940      0        2      938
+                      English; French      676      0       25      651
 
 By software:
-  NVivo 12                       3
+                                         Total    QDA     Down    Restr
+                                NVivo      124      2       34       90
+  Taguette; GitHub; GitLab; Git; Zoom       73      2       27       46
+            NVivo (QSR International)       71      1       10       61
+
+By file type:
+                          Total    QDA     Down    Restr
+                  .pdf    21050      0    10983    10067
+                  .txt     2192      0      176     2016
+                  .tab      605      0       59      546
+
+By license:
+                                         Total    QDA     Down    Restr
+                      Standard Access    14879      8      789    14090
+                            CC BY 4.0    10523      0    10523        0
+                              CC0 1.0        7      0        5        2
 ```
 
 ---
