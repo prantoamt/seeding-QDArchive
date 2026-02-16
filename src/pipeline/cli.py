@@ -474,7 +474,7 @@ def status() -> None:
         )
         _print_breakdown("By software:", sw_rows, name_width=35)
 
-        # File type breakdown (top 15)
+        # File type breakdown
         ft_rows = (
             session.query(
                 File.file_type, col_total, col_qda, col_dl, col_restricted
@@ -482,7 +482,6 @@ def status() -> None:
             .filter(File.file_type.isnot(None))
             .group_by(File.file_type)
             .order_by(col_total.desc())
-            .limit(15)
             .all()
         )
         _print_breakdown("By file type:", ft_rows, name_width=20)

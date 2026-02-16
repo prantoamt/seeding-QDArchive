@@ -243,7 +243,7 @@ pdm run pipeline show 1 2 3 4 5
 
 ## `pipeline status`
 
-Show a summary of the collection progress: total records, QDA file count, downloaded file count, restricted count, and breakdowns by source, language, software, file type (top 15), and license. Each breakdown row includes columns for **Total**, **QDA**, **Downloaded**, and **Restricted**.
+Show a summary of the collection progress: total records, QDA file count, downloaded file count, restricted count, and breakdowns by source, language, software, file type, and license. Each breakdown row includes columns for **Total**, **QDA**, **Downloaded**, and **Restricted**.
 
 ```bash
 pdm run pipeline status
