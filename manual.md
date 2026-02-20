@@ -216,11 +216,13 @@ pipeline show <id> [id ...]
 | QDA file | Whether it's a QDA project file |
 | Status | downloaded / restricted / metadata only |
 | Title, Authors, Published | Dataset metadata |
+| Uploader, Uploader email | Contact / uploader info from repository |
 | Description | Dataset description (truncated to 300 chars) |
 | Tags | Subject tags from the repository |
 | Source, Source URL | Repository and dataset page link |
 | Download URL | Direct file download link |
 | License, License URL | License information |
+| Local dir | Local directory name for this dataset |
 | Local path | Where the file is stored on disk |
 | File hash | SHA-256 hash for deduplication |
 | Downloaded, Created | Timestamps |
@@ -329,10 +331,11 @@ pipeline export [options]
 
 ```
 id, source_name, source_url, download_url, file_name, file_type, file_hash,
-file_size_bytes, local_path, license_type, license_url, title, description,
-authors, date_published, tags, keywords, kind_of_data, language, content_type,
-friendly_type, software, geographic_coverage, restricted, api_checksum,
-is_qda_file, downloaded_at, created_at, notes
+file_size_bytes, local_path, local_directory, license_type, license_url, title,
+description, authors, date_published, tags, keywords, kind_of_data, language,
+content_type, friendly_type, software, geographic_coverage, restricted,
+api_checksum, uploader_name, uploader_email, is_qda_file, downloaded_at,
+created_at, notes
 ```
 
 ### Examples

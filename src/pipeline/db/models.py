@@ -51,6 +51,13 @@ class File(Base):
     restricted: Mapped[bool | None] = mapped_column(Boolean)
     api_checksum: Mapped[str | None] = mapped_column(String(150))
 
+    # Uploader info
+    uploader_name: Mapped[str | None] = mapped_column(Text)
+    uploader_email: Mapped[str | None] = mapped_column(String(200))
+
+    # Local storage
+    local_directory: Mapped[str | None] = mapped_column(Text)
+
     # Classification
     is_qda_file: Mapped[bool] = mapped_column(Boolean, default=False)
 

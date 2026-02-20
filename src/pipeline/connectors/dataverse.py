@@ -164,6 +164,14 @@ class DataverseConnector(BaseConnector):
                 if country:
                     geo_coverage.append(country)
 
+        # Contact / uploader info
+        contact_list = _get_field_value(fields, "datasetContact", [])
+        uploader_name = ""
+        uploader_email = ""
+        if isinstance(contact_list, list) and contact_list:
+            uploader_name = contact_list[0].get("datasetContactName", {}).get("value", "")
+            uploader_email = contact_list[0].get("datasetContactEmail", {}).get("value", "")
+
         # License info
         license_info = version.get("license", {})
         license_name = license_info.get("name", "") if isinstance(license_info, dict) else ""
@@ -206,6 +214,8 @@ class DataverseConnector(BaseConnector):
             language=language_list,
             software=software,
             geographic_coverage=geo_coverage,
+            uploader_name=uploader_name,
+            uploader_email=uploader_email,
             files=files,
         )
         return result

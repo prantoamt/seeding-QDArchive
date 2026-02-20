@@ -22,6 +22,8 @@ class SearchResult:
     language: list[str] = field(default_factory=list)
     software: list[str] = field(default_factory=list)
     geographic_coverage: list[str] = field(default_factory=list)
+    uploader_name: str = ""
+    uploader_email: str = ""
     files: list[dict] = field(default_factory=list)
 
 

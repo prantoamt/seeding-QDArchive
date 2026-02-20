@@ -24,6 +24,9 @@ _MIGRATION_COLUMNS: dict[str, str] = {
     "geographic_coverage": "TEXT",
     "restricted": "BOOLEAN",
     "api_checksum": "VARCHAR(150)",
+    "uploader_name": "TEXT",
+    "uploader_email": "VARCHAR(200)",
+    "local_directory": "TEXT",
 }
 
 

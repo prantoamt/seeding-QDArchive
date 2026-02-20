@@ -40,7 +40,9 @@ def _get_connector(source: str):
     return connector
 
 
-def _save_metadata_only(session, source, result, metadata, finfo, fname, file_ext, is_qda):
+def _save_metadata_only(
+    session, source, result, metadata, finfo, fname, file_ext, is_qda, dest_dir=None,
+):
     """Save a metadata-only DB record for a file we couldn't download (e.g. 403)."""
     existing = (
         session.query(File)
@@ -58,6 +60,7 @@ def _save_metadata_only(session, source, result, metadata, finfo, fname, file_ex
         file_type=file_ext,
         file_size_bytes=finfo.get("size"),
         local_path=None,
+        local_directory=dest_dir,
         license_type=metadata.license_type,
         license_url=metadata.license_url,
         title=metadata.title,
@@ -76,6 +79,8 @@ def _save_metadata_only(session, source, result, metadata, finfo, fname, file_ex
         friendly_type=finfo.get("friendly_type"),
         restricted=finfo.get("restricted", False),
         api_checksum=finfo.get("api_checksum"),
+        uploader_name=metadata.uploader_name or None,
+        uploader_email=metadata.uploader_email or None,
         is_qda_file=is_qda,
         notes="access restricted",
     )
@@ -187,7 +192,7 @@ def _scrape_results(connector, source, results, session):
             if finfo.get("restricted", False):
                 _save_metadata_only(
                     session, source, result, metadata, finfo,
-                    fname, file_ext, is_qda,
+                    fname, file_ext, is_qda, dest_dir=dest_dir,
                 )
                 restricted_count += 1
                 label = "[green]QDA[/green]" if is_qda else "[dim]file[/dim]"
@@ -205,7 +210,7 @@ def _scrape_results(connector, source, results, session):
                 if e.response.status_code == 403:
                     _save_metadata_only(
                         session, source, result, metadata, finfo,
-                        fname, file_ext, is_qda,
+                        fname, file_ext, is_qda, dest_dir=dest_dir,
                     )
                     restricted_count += 1
                     label = "[green]QDA[/green]" if is_qda else "[dim]file[/dim]"
@@ -237,6 +242,7 @@ def _scrape_results(connector, source, results, session):
                 file_hash=file_hash,
                 file_size_bytes=finfo.get("size"),
                 local_path=local_path,
+                local_directory=dest_dir,
                 license_type=metadata.license_type,
                 license_url=metadata.license_url,
                 title=metadata.title,
@@ -259,6 +265,8 @@ def _scrape_results(connector, source, results, session):
                 friendly_type=finfo.get("friendly_type"),
                 restricted=finfo.get("restricted", False),
                 api_checksum=finfo.get("api_checksum"),
+                uploader_name=metadata.uploader_name or None,
+                uploader_email=metadata.uploader_email or None,
                 is_qda_file=is_qda,
                 downloaded_at=datetime.utcnow(),
             )
@@ -634,6 +642,8 @@ def db_show(ids: tuple[int, ...]) -> None:
                 "",
                 f"[bold]Title:[/bold]       {r.title or '—'}",
                 f"[bold]Authors:[/bold]     {r.authors or '—'}",
+                f"[bold]Uploader:[/bold]    {r.uploader_name or '—'}",
+                f"[bold]Uploader email:[/bold] {r.uploader_email or '—'}",
                 f"[bold]Published:[/bold]   {r.date_published or '—'}",
                 f"[bold]Tags:[/bold]        {r.tags or '—'}",
                 f"[bold]Keywords:[/bold]    {r.keywords or '—'}",
@@ -650,6 +660,7 @@ def db_show(ids: tuple[int, ...]) -> None:
                 "",
                 f"[bold]Content type:[/bold] {r.content_type or '—'}",
                 f"[bold]Friendly type:[/bold] {r.friendly_type or '—'}",
+                f"[bold]Local dir:[/bold]   {r.local_directory or '—'}",
                 f"[bold]Local path:[/bold]  {r.local_path or '—'}",
                 f"[bold]File hash:[/bold]   {r.file_hash or '—'}",
                 f"[bold]API checksum:[/bold] {r.api_checksum or '—'}",
