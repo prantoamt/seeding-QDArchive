@@ -9,6 +9,7 @@ from pipeline.connectors.dryad import (
     DryadConnector,
     _encode_doi,
     _extract_doi,
+    _extract_file_id,
     _parse_license,
     _sanitize_doi,
     _strip_html,
@@ -256,7 +257,7 @@ def test_get_metadata_full(connector):
     assert f0["name"] == "interviews.qdpx"
     assert f0["id"] == "doi_10.5061_dryad.abc123"
     assert f0["size"] == 204800
-    assert f0["download_url"] == "https://datadryad.org/api/v2/files/111/download"
+    assert f0["download_url"] == "https://datadryad.org/stash/downloads/file_stream/111"
     assert f0["api_checksum"] == "sha-256:abc123def456"
     assert f0["restricted"] is False
     assert f0["content_type"] == "application/zip"
@@ -386,6 +387,14 @@ def test_encode_doi():
 
 def test_sanitize_doi():
     assert _sanitize_doi("doi:10.5061/dryad.abc123") == "doi_10.5061_dryad.abc123"
+
+
+def test_extract_file_id():
+    assert _extract_file_id("/api/v2/files/4443803/download") == "4443803"
+
+
+def test_extract_file_id_empty():
+    assert _extract_file_id("") == ""
 
 
 def test_parse_license_cc0():

@@ -20,8 +20,8 @@ DOWNLOAD_TIMEOUT = 120.0
 MAX_RETRIES = 3
 RETRY_DELAY = 2.0  # seconds, doubles each retry
 
-# Rate limiting: 1s polite delay (no documented limit)
-MIN_REQUEST_INTERVAL = 1.0
+# Rate limiting: anonymous limit is 30 req/min, lower for downloads
+MIN_REQUEST_INTERVAL = 2.0
 
 BASE_URL = "https://datadryad.org/api/v2"
 SITE_URL = "https://datadryad.org"
@@ -204,15 +204,18 @@ class DryadConnector(BaseConnector):
                 file_path = f.get("path", "")
                 ext = Path(file_path).suffix.lstrip(".") if file_path else ""
 
+                # API download endpoint requires auth; use public
+                # file_stream URL instead: /stash/downloads/file_stream/{id}
                 download_href = (
                     f.get("_links", {})
                     .get("stash:download", {})
                     .get("href", "")
                 )
+                file_id = _extract_file_id(download_href)
                 download_url = (
-                    f"{SITE_URL}{download_href}"
-                    if download_href.startswith("/")
-                    else download_href
+                    f"{SITE_URL}/stash/downloads/file_stream/{file_id}"
+                    if file_id
+                    else ""
                 )
 
                 digest = f.get("digest", "")
@@ -257,6 +260,7 @@ class DryadConnector(BaseConnector):
 
         Retries up to MAX_RETRIES times on connection errors with exponential backoff.
         """
+        self._throttle()
         dest = Path(dest_dir)
         dest.mkdir(parents=True, exist_ok=True)
 
@@ -320,6 +324,15 @@ def _encode_doi(doi: str) -> str:
     Turns 'doi:10.5061/dryad.xxx' into 'doi%3A10.5061%2Fdryad.xxx'.
     """
     return quote(doi, safe="")
+
+
+def _extract_file_id(download_href: str) -> str:
+    """Extract numeric file ID from a Dryad API download href.
+
+    E.g. '/api/v2/files/4443803/download' → '4443803'
+    """
+    match = re.search(r"/files/(\d+)/download", download_href)
+    return match.group(1) if match else ""
 
 
 def _sanitize_doi(doi: str) -> str:

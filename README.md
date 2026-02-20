@@ -27,14 +27,14 @@ The project has two parts:
 
 ## Data Sources
 
-| Source                                         | Type    | Coverage                        |
-| ---------------------------------------------- | ------- | ------------------------------- |
-| [Zenodo](https://zenodo.org)                   | API     | Open research repository        |
-| [Dryad](https://datadryad.org)                 | API     | Digital data repository         |
-| [Dataverse](https://dataverse.org)             | API     | QDR, DANS, DataverseNO          |
-| [UK Data Service](https://ukdataservice.ac.uk) | Scraper | UK national data archive        |
-| [QualidataNet](https://qualidata.net)          | Scraper | Qualitative data network        |
-| [Qualiservice](https://qualiservice.org)       | Scraper | German qualitative data service |
+| Source | Type | API URL | Coverage |
+|---|---|---|---|
+| [Zenodo](https://zenodo.org) | API | `https://zenodo.org/api/` | Open research repository |
+| [Dryad](https://datadryad.org) | API | `https://datadryad.org/api/v2/` | Digital data repository |
+| [Dataverse](https://dataverse.org) | API | `https://data.qdr.syr.edu/api/`, `https://ssh.datastations.nl/api/`, `https://dataverse.no/api/` | QDR, DANS, DataverseNO |
+| [UK Data Service](https://ukdataservice.ac.uk) | Scraper | `https://ukdataservice.ac.uk/` | UK national data archive |
+| [QualidataNet](https://qualidata.net) | Scraper | `https://www.qualidata.net/` | Qualitative data network |
+| [Qualiservice](https://qualiservice.org) | Scraper | `https://www.qualiservice.org/` | German qualitative data service |
 
 ## Quick Start
 
