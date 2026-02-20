@@ -439,9 +439,9 @@ Today is Feb 14. Part 1 due **March 15** (4 weeks). Part 2 due **April 12** (4 w
 | 1    | [x]  | Project scaffolding (PDM, DB, CLI skeleton)         | Low             | |
 | 2    | [x]  | Base connector interface                            | Low             | |
 | 3    | [x]  | Dataverse connector → run against QDR first         | Medium          | QDR is the highest-signal source (dedicated qualitative data repo); one connector reused for 3 Dataverse instances |
-| 4    | [ ]  | Evaluate QDR results, validate pipeline works       | —               | |
-| 5    | [ ]  | Run Dataverse connector against DANS + DataverseNO  | Low (reuse)     | Just add new entries with different base URLs |
-| 6    | [ ]  | Zenodo API connector                                | Medium          | |
+| 4    | [x]  | Evaluate QDR results, validate pipeline works       | —               | |
+| 5    | [x]  | Run Dataverse connector against DANS + DataverseNO  | Low (reuse)     | Just add new entries with different base URLs |
+| 6    | [x]  | Zenodo API connector                                | Medium          | |
 | 7    | [ ]  | Dryad API connector                                 | Medium          | |
 | 8    | [ ]  | File storage manager                                | Low             | |
 | 9    | [ ]  | CSV export                                          | Low             | |
