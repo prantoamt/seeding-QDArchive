@@ -41,7 +41,7 @@ def _get_connector(source: str):
 
 
 def _save_metadata_only(
-    session, source, result, metadata, finfo, fname, file_ext, is_qda, dest_dir=None,
+    session, source, result, metadata, finfo, fname, file_ext, is_qda, dir_name=None,
 ):
     """Save a metadata-only DB record for a file we couldn't download (e.g. 403)."""
     existing = (
@@ -60,7 +60,7 @@ def _save_metadata_only(
         file_type=file_ext,
         file_size_bytes=finfo.get("size"),
         local_path=None,
-        local_directory=dest_dir,
+        local_directory=dir_name,
         license_type=metadata.license_type,
         license_url=metadata.license_url,
         title=metadata.title,
@@ -177,6 +177,7 @@ def _scrape_results(connector, source, results, session):
             record_id = record_id.replace("/", "_").replace(":", "_")
             storage_path = get_storage_path(source, record_id, fname, title=metadata.title)
             dest_dir = str(storage_path.parent)
+            dir_name = storage_path.parent.name
 
             # Skip if already in DB (by download_url)
             already = (
@@ -192,7 +193,7 @@ def _scrape_results(connector, source, results, session):
             if finfo.get("restricted", False):
                 _save_metadata_only(
                     session, source, result, metadata, finfo,
-                    fname, file_ext, is_qda, dest_dir=dest_dir,
+                    fname, file_ext, is_qda, dir_name=dir_name,
                 )
                 restricted_count += 1
                 label = "[green]QDA[/green]" if is_qda else "[dim]file[/dim]"
@@ -210,7 +211,7 @@ def _scrape_results(connector, source, results, session):
                 if e.response.status_code == 403:
                     _save_metadata_only(
                         session, source, result, metadata, finfo,
-                        fname, file_ext, is_qda, dest_dir=dest_dir,
+                        fname, file_ext, is_qda, dir_name=dir_name,
                     )
                     restricted_count += 1
                     label = "[green]QDA[/green]" if is_qda else "[dim]file[/dim]"
@@ -242,7 +243,7 @@ def _scrape_results(connector, source, results, session):
                 file_hash=file_hash,
                 file_size_bytes=finfo.get("size"),
                 local_path=local_path,
-                local_directory=dest_dir,
+                local_directory=dir_name,
                 license_type=metadata.license_type,
                 license_url=metadata.license_url,
                 title=metadata.title,
@@ -706,8 +707,6 @@ def list_sources() -> None:
     planned = [
         ("zenodo", "Zenodo API"),
         ("dryad", "Dryad API"),
-        ("dans", "DANS Dataverse"),
-        ("dataverseno", "DataverseNO"),
         ("ukds", "UK Data Service (scraper)"),
         ("qualidata", "QualidataNet (scraper)"),
         ("qualiservice", "Qualiservice (scraper)"),
