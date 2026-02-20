@@ -1,4 +1,10 @@
-"""Dryad REST API v2 connector for public datasets."""
+"""Dryad REST API v2 connector for public datasets.
+
+Note: File downloads are blocked by AWS WAF bot protection on
+/stash/downloads/file_stream/{id} URLs. An API key is required for
+authenticated downloads via /api/v2/files/{id}/download. Until an API
+key is obtained, all Dryad files are saved as metadata-only records.
+"""
 
 import logging
 import re
