@@ -21,8 +21,8 @@ Single table: **`files`**
 | Column | Type | Required | Description |
 |---|---|---|---|
 | `source_name` | VARCHAR(100) | yes | Repository connector name (e.g. `qdr`, `dans`, `dataverseno`) |
-| `source_url` | TEXT | no | URL to the dataset page on the source repository |
-| `download_url` | TEXT | no | Direct download URL for the file |
+| `source_url` | TEXT | yes | URL to the dataset page on the source repository |
+| `download_url` | TEXT | yes | Direct download URL for the file |
 
 ### File Information
 

@@ -45,6 +45,8 @@ def sample_records():
     session = get_session()
     session.add(File(
         source_name="qdr", file_name="analysis.qdpx", file_type=".qdpx",
+        source_url="https://data.qdr.syr.edu/dataset.xhtml?persistentId=doi:10.5064/F6ABC123",
+        download_url="https://data.qdr.syr.edu/api/access/datafile/12345",
         title="Test Dataset", authors="Smith, J.", is_qda_file=True,
         file_size_bytes=1024, notes="access restricted (403)",
         keywords="qualitative research; interviews", language="English",
@@ -58,6 +60,8 @@ def sample_records():
     ))
     session.add(File(
         source_name="qdr", file_name="transcript.pdf", file_type=".pdf",
+        source_url="https://data.qdr.syr.edu/dataset.xhtml?persistentId=doi:10.5064/F6ABC123",
+        download_url="https://data.qdr.syr.edu/api/access/datafile/12346",
         title="Test Dataset", authors="Smith, J.", is_qda_file=False,
         file_size_bytes=2048, local_path="/tmp/transcript.pdf", file_hash="abc123",
         keywords="focus groups", language="German",

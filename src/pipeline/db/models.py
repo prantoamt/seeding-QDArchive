@@ -19,8 +19,8 @@ class File(Base):
 
     # Source info
     source_name: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
-    source_url: Mapped[str | None] = mapped_column(Text)
-    download_url: Mapped[str | None] = mapped_column(Text)
+    source_url: Mapped[str] = mapped_column(Text, nullable=False)
+    download_url: Mapped[str] = mapped_column(Text, nullable=False)
 
     # File info
     file_name: Mapped[str] = mapped_column(String(500), nullable=False)

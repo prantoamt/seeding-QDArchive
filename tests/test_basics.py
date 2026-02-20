@@ -16,7 +16,11 @@ def test_ensure_dirs(tmp_path, monkeypatch):
 
 
 def test_file_model_repr():
-    f = File(id=1, source_name="zenodo", file_name="test.qdpx")
+    f = File(
+        id=1, source_name="zenodo", file_name="test.qdpx",
+        source_url="https://zenodo.org/record/1",
+        download_url="https://zenodo.org/record/1/files/test.qdpx",
+    )
     assert "zenodo" in repr(f)
 
 
