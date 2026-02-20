@@ -3,7 +3,7 @@
 
 from pipeline.config import QDA_EXTENSIONS, ensure_dirs
 from pipeline.db.models import File
-from pipeline.storage.file_manager import compute_sha256
+from pipeline.storage.file_manager import compute_sha256, get_storage_path, slugify
 from pipeline.utils.license import is_open_license
 
 
@@ -40,3 +40,60 @@ def test_sha256(tmp_path):
     h = compute_sha256(p)
     assert len(h) == 64
     assert h == compute_sha256(p)  # deterministic
+
+
+# --- slugify tests ---
+
+
+def test_slugify_basic():
+    assert slugify("Qualitative Nursing Study") == "qualitative-nursing-study"
+
+
+def test_slugify_special_chars():
+    assert slugify("Data & Analysis: Results (2024)") == "data-analysis-results-2024"
+
+
+def test_slugify_unicode():
+    assert slugify("Ärzte und Übersetzung") == "arzte-und-ubersetzung"
+
+
+def test_slugify_truncation():
+    long = "a-very-long-title-that-exceeds-the-maximum-length-we-want-for-directory-names"
+    result = slugify(long, max_length=40)
+    assert len(result) <= 40
+    assert not result.endswith("-")
+
+
+def test_slugify_empty():
+    assert slugify("") == ""
+
+
+def test_slugify_only_special_chars():
+    assert slugify("@#$%^&*!") == ""
+
+
+def test_slugify_hyphen_collapsing():
+    assert slugify("foo---bar   baz") == "foo-bar-baz"
+
+
+# --- get_storage_path with title ---
+
+
+def test_storage_path_with_title(tmp_path, monkeypatch):
+    monkeypatch.setattr("pipeline.storage.file_manager.DATA_DIR", tmp_path)
+    path = get_storage_path("qdr", "doi_10.5064_F60Z715Z", "file.pdf", title="Nursing Study")
+    assert path.parent.name == "nursing-study-doi_10.5064_F60Z715Z"
+    assert path.name == "file.pdf"
+    assert path.parent.exists()
+
+
+def test_storage_path_without_title(tmp_path, monkeypatch):
+    monkeypatch.setattr("pipeline.storage.file_manager.DATA_DIR", tmp_path)
+    path = get_storage_path("qdr", "doi_10.5064_F60Z715Z", "file.pdf")
+    assert path.parent.name == "doi_10.5064_F60Z715Z"
+
+
+def test_storage_path_with_empty_title(tmp_path, monkeypatch):
+    monkeypatch.setattr("pipeline.storage.file_manager.DATA_DIR", tmp_path)
+    path = get_storage_path("qdr", "doi_10.5064_F60Z715Z", "file.pdf", title="")
+    assert path.parent.name == "doi_10.5064_F60Z715Z"

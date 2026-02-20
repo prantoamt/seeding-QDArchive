@@ -312,7 +312,7 @@ Build in this order (most relevant source first, then by volume):
 
 ### Phase 1.5 — File Storage & Organization
 
-- Download files to `data/{source_name}/{record_id}/{filename}`
+- Download files to `data/{source_name}/{title-slug}-{record_id}/{filename}`
 - Compute SHA-256 hash on download for deduplication
 - Support resumable/incremental downloads — skip re-downloading if file hash already exists in DB
 - Track `local_path` in metadata DB linking each record to its file

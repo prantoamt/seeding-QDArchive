@@ -86,7 +86,7 @@ src/pipeline/
 **Data layout on disk:**
 
 ```
-data/{source_name}/{record_id}/{filename}
+data/{source_name}/{title-slug}-{record_id}/{filename}
 ```
 
 ## Development

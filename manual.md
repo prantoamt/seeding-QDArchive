@@ -60,7 +60,7 @@ Search, fetch metadata, check licenses, and download files from a data source.
 1. Searches the source with the given query
 2. Fetches full metadata (title, authors, license, file list)
 3. Checks if the license is open — skips if not
-4. Downloads each file to `data/{source}/{record_id}/{filename}`
+4. Downloads each file to `data/{source}/{title-slug}-{record_id}/{filename}`
 5. Computes SHA-256 hash for deduplication
 6. Saves the record to the SQLite database
 7. Files returning 403 (restricted) are saved as metadata-only records

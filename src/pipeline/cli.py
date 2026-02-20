@@ -170,7 +170,7 @@ def _scrape_results(connector, source, results, session):
             else:
                 record_id = str(finfo["id"])
             record_id = record_id.replace("/", "_").replace(":", "_")
-            storage_path = get_storage_path(source, record_id, fname)
+            storage_path = get_storage_path(source, record_id, fname, title=metadata.title)
             dest_dir = str(storage_path.parent)
 
             # Skip if already in DB (by download_url)
