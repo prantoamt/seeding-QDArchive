@@ -727,10 +727,6 @@ def list_sources() -> None:
         console.print(f"  {name:<15} {connector.name:<45} [green]ready[/green]")
 
     planned = [
-        ("zenodo", "Zenodo API"),
-        ("dryad", "Dryad API"),
-        ("ukds", "UK Data Service (scraper)"),
-        ("qualidata", "QualidataNet (scraper)"),
         ("qualiservice", "Qualiservice (scraper)"),
     ]
     for name, desc in planned:

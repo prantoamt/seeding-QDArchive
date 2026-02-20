@@ -3,6 +3,7 @@
 from pipeline.connectors.base import BaseConnector, SearchResult
 from pipeline.connectors.dataverse import DataverseConnector
 from pipeline.connectors.dryad import DryadConnector
+from pipeline.connectors.qualidatanet import QualidataNetConnector
 from pipeline.connectors.ukds import UKDataServiceConnector
 from pipeline.connectors.zenodo import ZenodoConnector
 
@@ -13,10 +14,11 @@ CONNECTORS: dict[str, BaseConnector] = {
     "zenodo": ZenodoConnector(),
     "dryad": DryadConnector(),
     "ukds": UKDataServiceConnector(),
+    "qualidatanet": QualidataNetConnector(),
 }
 
 __all__ = [
     "CONNECTORS", "BaseConnector", "DataverseConnector",
-    "DryadConnector", "SearchResult", "UKDataServiceConnector",
-    "ZenodoConnector",
+    "DryadConnector", "QualidataNetConnector", "SearchResult",
+    "UKDataServiceConnector", "ZenodoConnector",
 ]

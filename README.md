@@ -2,7 +2,7 @@
 
 # Seeding QDArchive
 
-**Acquire, catalog, and classify open qualitative research data for the [QDArchive](https://qdarchive.org) web service.**
+**Acquire, catalog, and classify open qualitative research data for the QDArchive.**
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-3776AB?logo=python&logoColor=white)](https://python.org)
 [![PDM](https://img.shields.io/badge/pdm-managed-blueviolet)](https://pdm-project.org)
@@ -27,16 +27,16 @@ The project has two parts:
 
 ## Data Sources
 
-| Source                                                 | Type    | API URL                                    | Coverage                                   |
-| ------------------------------------------------------ | ------- | ------------------------------------------ | ------------------------------------------ |
-| [Zenodo](https://zenodo.org)                           | API     | `https://zenodo.org/api/`                  | Open research repository                   |
-| [Dryad](https://datadryad.org)                         | API     | `https://datadryad.org/api/v2/`            | Digital data repository                    |
-| [QDR](https://data.qdr.syr.edu)                        | API     | `https://data.qdr.syr.edu/api/`            | Qualitative Data Repository (Syracuse)     |
-| [DANS](https://ssh.datastations.nl)                    | API     | `https://ssh.datastations.nl/api/`         | Dutch national research data archive       |
-| [DataverseNO](https://dataverse.no)                    | API     | `https://dataverse.no/api/`                | Norwegian research data archive            |
-| [UK Data Service](https://reshare.ukdataservice.ac.uk) | API     | `https://reshare.ukdataservice.ac.uk/cgi/` | UK national data archive (ReShare EPrints) |
-| [QualidataNet](https://qualidata.net)                  | Scraper | `https://www.qualidata.net/`               | Qualitative data network                   |
-| [Qualiservice](https://qualiservice.org)               | Scraper | `https://www.qualiservice.org/`            | German qualitative data service            |
+| Source                                                 | Type    | API URL                                    | Coverage                                          |
+| ------------------------------------------------------ | ------- | ------------------------------------------ | ------------------------------------------------- |
+| [Zenodo](https://zenodo.org)                           | API     | `https://zenodo.org/api/`                  | Open research repository                          |
+| [Dryad](https://datadryad.org)                         | API     | `https://datadryad.org/api/v2/`            | Digital data repository                           |
+| [QDR](https://data.qdr.syr.edu)                        | API     | `https://data.qdr.syr.edu/api/`            | Qualitative Data Repository (Syracuse)            |
+| [DANS](https://ssh.datastations.nl)                    | API     | `https://ssh.datastations.nl/api/`         | Dutch national research data archive              |
+| [DataverseNO](https://dataverse.no)                    | API     | `https://dataverse.no/api/`                | Norwegian research data archive                   |
+| [UK Data Service](https://reshare.ukdataservice.ac.uk) | API     | `https://reshare.ukdataservice.ac.uk/cgi/` | UK national data archive (ReShare EPrints)        |
+| [QualidataNet](https://www.qualidatanet.com)           | API     | `https://www.qualidatanet.com/es/`         | Federated qualitative data portal (metadata-only) |
+| [Qualiservice](https://qualiservice.org)               | Scraper | `https://www.qualiservice.org/`            | German qualitative data service                   |
 
 ## Quick Start
 

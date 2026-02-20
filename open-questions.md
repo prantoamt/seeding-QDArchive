@@ -14,6 +14,33 @@ Questions to clarify with the professor or during coordination meetings.
     - Actual terms: documentation under CC BY-SA 4.0, data files accessible without restrictions for registered QDR users
     - No standard CC/CC0 license identifier is provided — should we include or skip these?
 
+### QualidataNet — Metadata Only, No File Downloads
+
+QualidataNet (`qualidatanet.com`) is a federated metadata portal operated by KonsortSWD / RDC Qualiservice (University of Bremen). It aggregates ~143 records from 6 German research data centers via an open Elasticsearch API. However, **none of the partner institutions allow unrestricted file downloads** — all require registration, formal applications, or usage agreements:
+
+| Data Center | Records | DOI Pattern | Access Requirement |
+|---|---|---|---|
+| FDZ Qualiservice (PANGAEA) | 58 | `doi.pangaea.de/10.1594/PANGAEA.*` | Login + signup required |
+| FDZ Bildung | 47 | `doi.org/10.7477/*` | Registration + formal application |
+| FDZ eLabour | 17 | `doi.org/10.60613/*` | Usage agreement/contract required |
+| FDZ DZHW | 12 | `doi.org/10.21249/DZHW:*` | Scientific Use File application |
+| QualiBi | 5 | `doi.org/10.25716/GUDE.*` | All rights reserved |
+| FDZ-BO | 4 | `doi.org/10.7478/*` | JS-rendered portal, no direct access |
+
+The `accessRestricted: false` field in QualidataNet's Elasticsearch API is misleading — it indicates metadata accessibility, not file downloadability.
+
+**Current approach:** Save all 143 records as metadata-only (title, authors, description, keywords, license, DOI, data center). No file downloads attempted.
+
+**Question for professor:** Should we attempt to register at individual data centers (e.g., FDZ Qualiservice via PANGAEA) to access files, or is metadata-only sufficient for QualidataNet?
+
+### Dryad — Downloads Blocked by AWS WAF
+
+Dryad's file download URLs (`/stash/downloads/file_stream/{id}`) are protected by AWS WAF bot detection. Automated downloads via httpx receive either HTTP 403 or a 202 response with a JavaScript challenge (`x-amzn-waf-action: challenge`). Search and metadata retrieval work fine via the public API.
+
+**Current approach:** Save all Dryad records as metadata-only (restricted). A future enhancement could use a headless browser (Playwright) to bypass the WAF challenge.
+
+**Question for professor:** Is metadata-only acceptable for Dryad, or should we invest time in a headless browser approach?
+
 ---
 
 ## Part 2: Data Classification
