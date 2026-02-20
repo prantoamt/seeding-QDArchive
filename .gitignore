@@ -23,5 +23,10 @@ build/
 *.swp
 *.swo
 
+# Planning docs (local only)
+implementation-plan.md
+dryad-implementation-plan.md
+zenodo-implementation-plan.md
+
 # OS
 .DS_Store
