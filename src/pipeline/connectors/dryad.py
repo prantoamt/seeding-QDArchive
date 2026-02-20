@@ -20,8 +20,8 @@ DOWNLOAD_TIMEOUT = 120.0
 MAX_RETRIES = 3
 RETRY_DELAY = 2.0  # seconds, doubles each retry
 
-# Rate limiting: anonymous limit is 30 req/min, lower for downloads
-MIN_REQUEST_INTERVAL = 2.0
+# Rate limiting: Dryad allows 100 requests/hour for downloads
+MIN_REQUEST_INTERVAL = 5.0
 
 BASE_URL = "https://datadryad.org/api/v2"
 SITE_URL = "https://datadryad.org"
@@ -281,11 +281,23 @@ class DryadConnector(BaseConnector):
 
                 logger.info("Downloaded %s -> %s", url, file_path)
                 return str(file_path)
+            except httpx.HTTPStatusError as e:
+                if e.response.status_code == 429 and attempt < MAX_RETRIES:
+                    delay = RETRY_DELAY * (2 ** (attempt - 1))
+                    logger.warning(
+                        "Rate limited (429) attempt %d/%d for %s. "
+                        "Retrying in %.0fs...",
+                        attempt, MAX_RETRIES, url, delay,
+                    )
+                    time.sleep(delay)
+                else:
+                    raise
             except (httpx.ConnectError, httpx.ReadError, ConnectionError) as e:
                 if attempt < MAX_RETRIES:
                     delay = RETRY_DELAY * (2 ** (attempt - 1))
                     logger.warning(
-                        "Download attempt %d/%d failed for %s: %s. Retrying in %.0fs...",
+                        "Download attempt %d/%d failed for %s: %s. "
+                        "Retrying in %.0fs...",
                         attempt, MAX_RETRIES, url, e, delay,
                     )
                     time.sleep(delay)
