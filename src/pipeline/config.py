@@ -29,6 +29,16 @@ QDA_EXTENSIONS = {
 
 QUALITATIVE_EXTENSIONS = {".txt", ".pdf", ".rtf", ".docx"}
 
+# Human-readable directory names for each source (used in data/ folder)
+SOURCE_DIR_NAMES: dict[str, str] = {
+    "qdr": "qdr",
+    "dans": "dans",
+    "dataverseno": "dataverse-no",
+    "zenodo": "zenodo",
+    "dryad": "dryad",
+    "ukds": "uk-data-service",
+}
+
 
 def ensure_dirs() -> None:
     """Create required directories if they don't exist."""

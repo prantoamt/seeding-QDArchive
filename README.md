@@ -27,16 +27,16 @@ The project has two parts:
 
 ## Data Sources
 
-| Source | Type | API URL | Coverage |
-|---|---|---|---|
-| [Zenodo](https://zenodo.org) | API | `https://zenodo.org/api/` | Open research repository |
-| [Dryad](https://datadryad.org) | API | `https://datadryad.org/api/v2/` | Digital data repository |
-| [QDR](https://data.qdr.syr.edu) | API | `https://data.qdr.syr.edu/api/` | Qualitative Data Repository (Syracuse) |
-| [DANS](https://ssh.datastations.nl) | API | `https://ssh.datastations.nl/api/` | Dutch national research data archive |
-| [DataverseNO](https://dataverse.no) | API | `https://dataverse.no/api/` | Norwegian research data archive |
-| [UK Data Service](https://ukdataservice.ac.uk) | Scraper | `https://ukdataservice.ac.uk/` | UK national data archive |
-| [QualidataNet](https://qualidata.net) | Scraper | `https://www.qualidata.net/` | Qualitative data network |
-| [Qualiservice](https://qualiservice.org) | Scraper | `https://www.qualiservice.org/` | German qualitative data service |
+| Source                                                 | Type    | API URL                                    | Coverage                                   |
+| ------------------------------------------------------ | ------- | ------------------------------------------ | ------------------------------------------ |
+| [Zenodo](https://zenodo.org)                           | API     | `https://zenodo.org/api/`                  | Open research repository                   |
+| [Dryad](https://datadryad.org)                         | API     | `https://datadryad.org/api/v2/`            | Digital data repository                    |
+| [QDR](https://data.qdr.syr.edu)                        | API     | `https://data.qdr.syr.edu/api/`            | Qualitative Data Repository (Syracuse)     |
+| [DANS](https://ssh.datastations.nl)                    | API     | `https://ssh.datastations.nl/api/`         | Dutch national research data archive       |
+| [DataverseNO](https://dataverse.no)                    | API     | `https://dataverse.no/api/`                | Norwegian research data archive            |
+| [UK Data Service](https://reshare.ukdataservice.ac.uk) | API     | `https://reshare.ukdataservice.ac.uk/cgi/` | UK national data archive (ReShare EPrints) |
+| [QualidataNet](https://qualidata.net)                  | Scraper | `https://www.qualidata.net/`               | Qualitative data network                   |
+| [Qualiservice](https://qualiservice.org)               | Scraper | `https://www.qualiservice.org/`            | German qualitative data service            |
 
 ## Quick Start
 
@@ -55,8 +55,8 @@ pdm install
 ### Usage
 
 ```bash
-pdm run pipeline search qdr -q "qualitative"        # Search QDR
-pdm run pipeline scrape qdr -f queries.txt -n 10     # Scrape with query file
+pdm run pipeline search qdr -q "qualitative"         # Search QDR
+pdm run pipeline scrape qdr -f queries.txt           # Scrape with query file
 pdm run pipeline db --qda-only                       # Browse QDA files
 pdm run pipeline show 6 49 50                        # Inspect records
 pdm run pipeline status                              # Collection progress

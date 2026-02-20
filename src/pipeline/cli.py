@@ -9,7 +9,13 @@ import httpx
 from rich.console import Console
 from rich.table import Table
 
-from pipeline.config import EXPORTS_DIR, QDA_EXTENSIONS, ensure_dirs
+from pipeline.config import (
+    EXPORTS_DIR,
+    PROJECT_ROOT,
+    QDA_EXTENSIONS,
+    SOURCE_DIR_NAMES,
+    ensure_dirs,
+)
 from pipeline.connectors import CONNECTORS
 from pipeline.db.connection import get_session, init_db
 from pipeline.db.export import export_to_csv
@@ -180,7 +186,8 @@ def _scrape_results(connector, source, results, session):
             else:
                 record_id = str(finfo["id"])
             record_id = record_id.replace("/", "_").replace(":", "_")
-            storage_path = get_storage_path(source, record_id, fname, title=metadata.title)
+            dir_label = SOURCE_DIR_NAMES.get(source, source)
+            storage_path = get_storage_path(dir_label, record_id, fname, title=metadata.title)
             dest_dir = str(storage_path.parent)
             dir_name = storage_path.parent.name
 
@@ -247,7 +254,7 @@ def _scrape_results(connector, source, results, session):
                 file_type=file_ext,
                 file_hash=file_hash,
                 file_size_bytes=finfo.get("size"),
-                local_path=local_path,
+                local_path=str(Path(local_path).relative_to(PROJECT_ROOT)),
                 local_directory=dir_name,
                 license_type=metadata.license_type,
                 license_url=metadata.license_url,
