@@ -51,6 +51,13 @@ class File(Base):
     restricted: Mapped[bool | None] = mapped_column(Boolean)
     api_checksum: Mapped[str | None] = mapped_column(String(150))
 
+    # Provenance
+    depositor: Mapped[str | None] = mapped_column(Text)
+    producer: Mapped[str | None] = mapped_column(Text)
+    publication: Mapped[str | None] = mapped_column(Text)
+    date_of_collection: Mapped[str | None] = mapped_column(Text)
+    time_period_covered: Mapped[str | None] = mapped_column(Text)
+
     # Uploader info
     uploader_name: Mapped[str | None] = mapped_column(Text)
     uploader_email: Mapped[str | None] = mapped_column(String(200))

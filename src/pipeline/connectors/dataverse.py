@@ -164,6 +164,45 @@ class DataverseConnector(BaseConnector):
                 if country:
                     geo_coverage.append(country)
 
+        # Provenance fields (mainly DataverseNO)
+        depositor = _get_field_value(fields, "depositor", "")
+        if not isinstance(depositor, str):
+            depositor = ""
+
+        producer_list = _get_field_value(fields, "producer", [])
+        producers = []
+        if isinstance(producer_list, list):
+            for p in producer_list:
+                name = p.get("producerName", {}).get("value", "")
+                if name:
+                    producers.append(name)
+
+        pub_list = _get_field_value(fields, "publication", [])
+        publications = []
+        if isinstance(pub_list, list):
+            for pub in pub_list:
+                citation_text = pub.get("publicationCitation", {}).get("value", "")
+                pub_url = pub.get("publicationURL", {}).get("value", "")
+                entry = citation_text or pub_url
+                if entry:
+                    publications.append(entry)
+
+        collection_list = _get_field_value(fields, "dateOfCollection", [])
+        date_of_collection = ""
+        if isinstance(collection_list, list) and collection_list:
+            start = collection_list[0].get("dateOfCollectionStart", {}).get("value", "")
+            end = collection_list[0].get("dateOfCollectionEnd", {}).get("value", "")
+            if start or end:
+                date_of_collection = f"{start} to {end}" if start and end else (start or end)
+
+        tp_list = _get_field_value(fields, "timePeriodCovered", [])
+        time_period_covered = ""
+        if isinstance(tp_list, list) and tp_list:
+            start = tp_list[0].get("timePeriodCoveredStart", {}).get("value", "")
+            end = tp_list[0].get("timePeriodCoveredEnd", {}).get("value", "")
+            if start or end:
+                time_period_covered = f"{start} to {end}" if start and end else (start or end)
+
         # Contact / uploader info
         contact_list = _get_field_value(fields, "datasetContact", [])
         uploader_name = ""
@@ -214,6 +253,11 @@ class DataverseConnector(BaseConnector):
             language=language_list,
             software=software,
             geographic_coverage=geo_coverage,
+            depositor=depositor,
+            producer=producers,
+            publication=publications,
+            date_of_collection=date_of_collection,
+            time_period_covered=time_period_covered,
             uploader_name=uploader_name,
             uploader_email=uploader_email,
             files=files,

@@ -49,6 +49,12 @@ def sample_records():
         file_size_bytes=1024, notes="access restricted (403)",
         keywords="qualitative research; interviews", language="English",
         software="NVivo 12", restricted=True,
+        uploader_name="Smith, J.", uploader_email="smith@example.edu",
+        local_directory="test-dataset-doi_10.5064_F6ABC123",
+        depositor="Doe, A.", producer="University of Testing",
+        publication="Smith (2023) Qualitative Study",
+        date_of_collection="2022-01-01 to 2022-12-31",
+        time_period_covered="2020-01-01 to 2022-06-30",
     ))
     session.add(File(
         source_name="qdr", file_name="transcript.pdf", file_type=".pdf",
@@ -115,6 +121,29 @@ def test_show_record(runner, sample_records):
     assert "analysis.qdpx" in result.output
     assert "Smith, J." in result.output
     assert "restricted" in result.output
+
+
+def test_show_new_fields(runner, sample_records):
+    """Verify show command displays uploader, provenance, and local_directory fields."""
+    result = runner.invoke(cli, ["show", "1"])
+    assert result.exit_code == 0
+    assert "smith@example.edu" in result.output
+    assert "Smith, J." in result.output
+    assert "test-dataset-doi_10.5064_F6ABC123" in result.output
+    assert "Doe, A." in result.output
+    assert "University of Testing" in result.output
+    assert "Smith (2023) Qualitative Study" in result.output
+    assert "2022-01-01 to 2022-12-31" in result.output
+    assert "2020-01-01 to 2022-06-30" in result.output
+
+
+def test_show_empty_new_fields(runner, sample_records):
+    """Record 2 has no new fields — show should display dashes."""
+    result = runner.invoke(cli, ["show", "2"])
+    assert result.exit_code == 0
+    # The new fields should show '—' for record 2
+    assert "Uploader:" in result.output
+    assert "Depositor:" in result.output
 
 
 def test_show_multiple(runner, sample_records):
@@ -201,6 +230,13 @@ def test_scrape_skips_already_cataloged(runner, sample_records):
         language=[],
         software=[],
         geographic_coverage=[],
+        depositor="",
+        producer=[],
+        publication=[],
+        date_of_collection="",
+        time_period_covered="",
+        uploader_name="",
+        uploader_email="",
         files=[{
             "name": "transcript.pdf",
             "download_url": "https://example.com/api/files/99/download",

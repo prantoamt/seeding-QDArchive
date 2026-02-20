@@ -140,6 +140,8 @@ Browse the metadata database in a summary table.
 pipeline db [options]
 ```
 
+For the full database schema, available query filters, and field availability by source, see [`database.md`](database.md).
+
 ### Options
 
 | Option | Short | Default | Description |
@@ -155,89 +157,31 @@ pipeline db [options]
 | `--has-keywords` | | `false` | Show only records that have keywords |
 | `--limit` | `-n` | `50` | Max rows to display |
 
-### Table Columns
-
-| Column | Description |
-|---|---|
-| **ID** | Database record ID (use with `show` command) |
-| **File** | Original filename |
-| **Type** | File extension (`.pdf`, `.qdpx`, etc.) |
-| **Source** | Source connector name (`qdr`, `zenodo`, etc.) |
-| **QDA** | `yes` if the file is a QDA project file |
-| **Status** | `downloaded`, `restricted`, or `metadata` |
-| **Size** | File size in human-readable format |
-
 ### Examples
 
 ```bash
-# Browse first 50 records
 pdm run pipeline db
-
-# Show only QDA files
-pdm run pipeline db --qda-only
-
-# Show restricted files from QDR, up to 100
-pdm run pipeline db -s qdr --restricted-only -n 100
-
-# Search across title, description, keywords, tags
-pdm run pipeline db --search "interview"
-
-# Filter by language or software
-pdm run pipeline db --language english
-pdm run pipeline db --software nvivo
-
-# Filter by file type (dot is auto-prepended)
-pdm run pipeline db --file-type pdf
-
-# Show records that have software or keyword metadata
-pdm run pipeline db --has-software
-pdm run pipeline db --has-keywords
-
-# Combine filters
 pdm run pipeline db -s qdr --qda-only
+pdm run pipeline db --search "interview"
 pdm run pipeline db --language english --has-software
+pdm run pipeline db --restricted-only --file-type pdf -n 100
 ```
 
 ---
 
 ## `pipeline show`
 
-Display all metadata fields for one or more records. Shows a formatted panel for each record with file info, metadata, license details, paths, and hashes.
+Display all metadata fields for one or more records. Shows a formatted panel with every column from the database schema (see [`database.md`](database.md) for column descriptions).
 
 ```
 pipeline show <id> [id ...]
 ```
 
-### Fields Displayed
-
-| Field | Description |
-|---|---|
-| File, Type, Size | Basic file information |
-| QDA file | Whether it's a QDA project file |
-| Status | downloaded / restricted / metadata only |
-| Title, Authors, Published | Dataset metadata |
-| Uploader, Uploader email | Contact / uploader info from repository |
-| Description | Dataset description (truncated to 300 chars) |
-| Tags | Subject tags from the repository |
-| Source, Source URL | Repository and dataset page link |
-| Download URL | Direct file download link |
-| License, License URL | License information |
-| Local dir | Local directory name for this dataset |
-| Local path | Where the file is stored on disk |
-| File hash | SHA-256 hash for deduplication |
-| Downloaded, Created | Timestamps |
-| Notes | Additional notes (e.g., "access restricted (403)") |
-
 ### Examples
 
 ```bash
-# Show a single record
 pdm run pipeline show 6
-
-# Compare multiple records side by side
 pdm run pipeline show 6 49 50
-
-# Show first few records
 pdm run pipeline show 1 2 3 4 5
 ```
 
@@ -327,16 +271,7 @@ pipeline export [options]
 | `--format` | | `csv` | Export format |
 | `--output` | `-o` | `exports/metadata.csv` | Output file path |
 
-### CSV Columns
-
-```
-id, source_name, source_url, download_url, file_name, file_type, file_hash,
-file_size_bytes, local_path, local_directory, license_type, license_url, title,
-description, authors, date_published, tags, keywords, kind_of_data, language,
-content_type, friendly_type, software, geographic_coverage, restricted,
-api_checksum, uploader_name, uploader_email, is_qda_file, downloaded_at,
-created_at, notes
-```
+All database columns are included in the export. See [`database.md`](database.md) for the full column list.
 
 ### Examples
 

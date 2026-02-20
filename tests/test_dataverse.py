@@ -145,6 +145,51 @@ DATASET_RESPONSE = {
                                 {"country": {"value": "Canada"}},
                             ],
                         },
+                        {
+                            "typeName": "datasetContact",
+                            "value": [
+                                {
+                                    "datasetContactName": {"value": "Smith, J."},
+                                    "datasetContactEmail": {"value": "smith@example.edu"},
+                                },
+                            ],
+                        },
+                        {"typeName": "depositor", "value": "Doe, A."},
+                        {
+                            "typeName": "producer",
+                            "value": [
+                                {"producerName": {"value": "University of Testing"}},
+                            ],
+                        },
+                        {
+                            "typeName": "publication",
+                            "value": [
+                                {
+                                    "publicationCitation": {
+                                        "value": "Smith (2023) Qualitative Study",
+                                    },
+                                    "publicationURL": {"value": "https://doi.org/10.1234/test"},
+                                },
+                            ],
+                        },
+                        {
+                            "typeName": "dateOfCollection",
+                            "value": [
+                                {
+                                    "dateOfCollectionStart": {"value": "2022-01-01"},
+                                    "dateOfCollectionEnd": {"value": "2022-12-31"},
+                                },
+                            ],
+                        },
+                        {
+                            "typeName": "timePeriodCovered",
+                            "value": [
+                                {
+                                    "timePeriodCoveredStart": {"value": "2020-01-01"},
+                                    "timePeriodCoveredEnd": {"value": "2022-06-30"},
+                                },
+                            ],
+                        },
                     ]
                 }
             },
@@ -202,6 +247,17 @@ def test_get_metadata_with_persistent_id(connector):
     assert result.software == ["NVivo 12"]
     assert result.geographic_coverage == ["United States", "Canada"]
 
+    # Uploader / contact info
+    assert result.uploader_name == "Smith, J."
+    assert result.uploader_email == "smith@example.edu"
+
+    # Provenance fields
+    assert result.depositor == "Doe, A."
+    assert result.producer == ["University of Testing"]
+    assert result.publication == ["Smith (2023) Qualitative Study"]
+    assert result.date_of_collection == "2022-01-01 to 2022-12-31"
+    assert result.time_period_covered == "2020-01-01 to 2022-06-30"
+
     # File-level fields
     assert result.files[0]["restricted"] is False
     assert result.files[0]["friendly_type"] == "REFI-QDA-Project"
@@ -244,6 +300,48 @@ def test_get_metadata_terms_of_access_fallback(connector):
         result = connector.get_metadata(url)
 
     assert result.license_type == "QDR Standard Access"
+
+
+def test_get_metadata_missing_optional_fields(connector):
+    """Fields like depositor, producer, etc. default to empty when absent (e.g. DANS)."""
+    response = {
+        "status": "OK",
+        "data": {
+            "latestVersion": {
+                "releaseTime": "2023-01-01T00:00:00Z",
+                "license": {"name": "DANS Licence", "uri": "https://example.com"},
+                "metadataBlocks": {
+                    "citation": {
+                        "fields": [
+                            {"typeName": "title", "value": "Minimal Dataset"},
+                            {
+                                "typeName": "datasetContact",
+                                "value": [
+                                    {"datasetContactName": {"value": "Contact Person"}},
+                                ],
+                            },
+                        ]
+                    }
+                },
+                "files": [],
+            }
+        },
+    }
+    mock_resp = MagicMock()
+    mock_resp.json.return_value = response
+    mock_resp.raise_for_status = MagicMock()
+
+    url = "https://data.qdr.syr.edu/dataset.xhtml?persistentId=doi:10.5064/MINIMAL"
+    with patch("httpx.get", return_value=mock_resp):
+        result = connector.get_metadata(url)
+
+    assert result.uploader_name == "Contact Person"
+    assert result.uploader_email == ""
+    assert result.depositor == ""
+    assert result.producer == []
+    assert result.publication == []
+    assert result.date_of_collection == ""
+    assert result.time_period_covered == ""
 
 
 def test_get_metadata_with_numeric_id(connector):
@@ -339,3 +437,7 @@ def test_connector_registry():
 
     assert "qdr" in CONNECTORS
     assert isinstance(CONNECTORS["qdr"], DataverseConnector)
+    assert "dans" in CONNECTORS
+    assert isinstance(CONNECTORS["dans"], DataverseConnector)
+    assert "dataverseno" in CONNECTORS
+    assert isinstance(CONNECTORS["dataverseno"], DataverseConnector)
