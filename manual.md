@@ -248,10 +248,10 @@ pdm run pipeline list-sources
 Available sources:
 
   qdr             qdr                                           ready
-  zenodo          Zenodo API                                    planned
-  dryad           Dryad API                                     planned
-  dans            DANS Dataverse                                planned
-  dataverseno     DataverseNO                                   planned
+  dans            dans                                          ready
+  dataverseno     dataverseno                                   ready
+  zenodo          zenodo                                        ready
+  dryad           dryad                                         ready
 ```
 
 ---

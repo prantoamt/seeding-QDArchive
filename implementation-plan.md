@@ -442,7 +442,7 @@ Today is Feb 14. Part 1 due **March 15** (4 weeks). Part 2 due **April 12** (4 w
 | 4    | [x]  | Evaluate QDR results, validate pipeline works       | —               | |
 | 5    | [x]  | Run Dataverse connector against DANS + DataverseNO  | Low (reuse)     | Just add new entries with different base URLs |
 | 6    | [x]  | Zenodo API connector                                | Medium          | |
-| 7    | [ ]  | Dryad API connector                                 | Medium          | |
+| 7    | [x]  | Dryad API connector                                 | Medium          | |
 | 8    | [ ]  | File storage manager                                | Low             | |
 | 9    | [ ]  | CSV export                                          | Low             | |
 | 10   | [ ]  | UK Data Service scraper                             | High            | |
