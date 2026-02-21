@@ -23,3 +23,55 @@ thematic analysis
 narrative analysis
 case study research
 participant observation
+qualitative coding
+open-ended responses
+open-ended questions
+biographical interview
+life history interview
+action research qualitative
+interpretive research
+interpretative phenomenological
+QualCoder
+mixed methods qualitative
+codebook qualitative
+
+# German (Zenodo, QualidataNet)
+qualitative Forschung
+qualitatives Interview
+Leitfadeninterview
+Gruppendiskussion
+Biografieforschung
+qualitative Inhaltsanalyse
+Transkript Interview
+
+# Dutch (DANS)
+kwalitatief onderzoek
+kwalitatief interview
+focusgroep
+diepte-interview
+transcriptie interview
+
+# Norwegian (DataverseNO)
+kvalitativ forskning
+kvalitativt intervju
+fokusgruppe
+dybdeintervju
+
+# Spanish (Zenodo)
+investigación cualitativa
+entrevista cualitativa
+grupo focal
+análisis temático
+transcripción entrevista
+
+# French (Zenodo)
+recherche qualitative
+entretien qualitatif
+groupe de discussion
+analyse thématique
+
+# Portuguese (Zenodo)
+pesquisa qualitativa
+entrevista qualitativa
+grupo focal
+análise temática

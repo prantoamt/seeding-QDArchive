@@ -22,6 +22,10 @@ RETRY_DELAY = 2.0  # seconds, doubles each retry
 # Rate limiting: 2 seconds between API calls (well within 30 req/min)
 MIN_REQUEST_INTERVAL = 2.0
 
+# Maximum results to fetch per search query (Zenodo hard-caps at page 400 = 10,000,
+# but broad queries return thousands of irrelevant results — cap early to avoid waste)
+MAX_SEARCH_RESULTS = 200
+
 
 class ZenodoConnector(BaseConnector):
     """Connector for the Zenodo open-access repository."""
@@ -97,6 +101,12 @@ class ZenodoConnector(BaseConnector):
 
             total = hits.get("total", 0)
             if page * per_page >= total:
+                break
+            if len(results) >= MAX_SEARCH_RESULTS:
+                logger.info(
+                    "Search '%s' capped at %d results (total available: %d)",
+                    query, len(results), total,
+                )
                 break
             page += 1
 

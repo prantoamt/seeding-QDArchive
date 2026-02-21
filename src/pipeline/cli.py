@@ -166,17 +166,30 @@ def _scrape_results(connector, source, results, session):
             skipped_count += 1
             continue
 
-        # Skip datasets whose description lacks any qualitative keyword
-        if metadata.description:
-            desc_lower = metadata.description.lower()
-            if not any(kw in desc_lower for kw in QUALITATIVE_KEYWORDS):
-                console.print("  [dim]Skipping — description has no qualitative relevance[/dim]")
-                skipped_count += 1
-                continue
-
         if not metadata.files:
             console.print("  [yellow]No files in this dataset.[/yellow]")
             continue
+
+        # Always keep datasets that contain QDA files, regardless of description
+        has_qda_file = any(
+            Path(f["name"]).suffix.lower() in QDA_EXTENSIONS
+            or "refi-qda" in f.get("friendly_type", "").lower()
+            or "refiqda" in f.get("content_type", "").lower()
+            for f in metadata.files
+        )
+
+        # Skip datasets whose description AND keywords lack qualitative signal
+        if not has_qda_file:
+            text_to_check = (metadata.description or "").lower()
+            # Also check keywords/tags for qualitative relevance
+            if metadata.keywords:
+                text_to_check += " " + " ".join(
+                    kw.lower() for kw in metadata.keywords
+                )
+            if not any(kw in text_to_check for kw in QUALITATIVE_KEYWORDS):
+                console.print("  [dim]Skipping — description has no qualitative relevance[/dim]")
+                skipped_count += 1
+                continue
 
         # Download each file
         for finfo in metadata.files:

@@ -78,6 +78,23 @@ QUALITATIVE_KEYWORDS = {
     "leitfadeninterview",
     "gruppendiskussion",
     "biografieforschung",
+    "inhaltsanalyse",
+    "transkript",
+    # Spanish
+    "cualitativ",           # cualitativa, cualitativo
+    "entrevista",
+    "grupo focal",
+    "análisis temático",
+    # French
+    "qualitatif",           # qualitatif, qualitative (French)
+    "entretien",
+    "groupe de discussion",
+    # Portuguese
+    "qualitativ",           # already matches Portuguese "qualitativa"
+    "pesquisa qualitativa",
+    "entrevista qualitativa",
+    "grupo focal",          # same in Portuguese/Spanish
+    "análise temática",
 }
 
 # Human-readable directory names for each source (used in data/ folder)
