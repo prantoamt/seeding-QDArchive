@@ -14,6 +14,7 @@ from pipeline.config import (
     PROJECT_ROOT,
     QDA_EXTENSIONS,
     QUALITATIVE_EXTENSIONS,
+    QUALITATIVE_KEYWORDS,
     SOURCE_DIR_NAMES,
     ensure_dirs,
 )
@@ -165,11 +166,13 @@ def _scrape_results(connector, source, results, session):
             skipped_count += 1
             continue
 
-        # Skip datasets whose description doesn't mention "qualitative"
-        if metadata.description and "qualitative" not in metadata.description.lower():
-            console.print("  [dim]Skipping — description has no qualitative relevance[/dim]")
-            skipped_count += 1
-            continue
+        # Skip datasets whose description lacks any qualitative keyword
+        if metadata.description:
+            desc_lower = metadata.description.lower()
+            if not any(kw in desc_lower for kw in QUALITATIVE_KEYWORDS):
+                console.print("  [dim]Skipping — description has no qualitative relevance[/dim]")
+                skipped_count += 1
+                continue
 
         if not metadata.files:
             console.print("  [yellow]No files in this dataset.[/yellow]")
@@ -462,10 +465,14 @@ def status() -> None:
 
         restricted = session.query(File).filter(File.restricted.is_(True)).count()
 
+        metadata_only = total - downloaded - restricted
+
         console.print(f"[bold]Total records:[/bold]    {total}")
         console.print(f"[bold]QDA files:[/bold]        {qda}")
-        console.print(f"[bold]Downloaded files:[/bold] {downloaded}")
-        console.print(f"[bold]Restricted:[/bold]      {restricted}")
+        console.print()
+        console.print(f"  [green]Downloaded:[/green]     {downloaded}")
+        console.print(f"  [yellow]Restricted:[/yellow]     {restricted}  (metadata only)")
+        console.print(f"  [dim]Other:[/dim]          {metadata_only}  (metadata only)")
 
         # Reusable aggregation columns
         col_total = func.count(File.id).label("total")

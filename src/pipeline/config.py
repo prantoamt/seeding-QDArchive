@@ -29,6 +29,57 @@ QDA_EXTENSIONS = {
 
 QUALITATIVE_EXTENSIONS = {".txt", ".pdf", ".rtf", ".docx"}
 
+# Keywords that signal qualitative relevance in a dataset description.
+# Checked case-insensitively; includes common non-English equivalents.
+QUALITATIVE_KEYWORDS = {
+    # English
+    "qualitative",
+    "interview",
+    "focus group",
+    "ethnograph",          # ethnography, ethnographic
+    "grounded theory",
+    "thematic analysis",
+    "narrative analysis",
+    "case study",
+    "participant observation",
+    "semi-structured",
+    "in-depth interview",
+    "transcript",
+    "field note",
+    "fieldwork",
+    "life histor",         # life history, life histories
+    "oral histor",         # oral history, oral histories
+    "phenomenolog",        # phenomenology, phenomenological
+    "discourse analysis",
+    "content analysis",
+    "coding scheme",
+    "coded data",
+    "open-ended",
+    # QDA software names (strong signal)
+    "nvivo",
+    "atlas.ti",
+    "maxqda",
+    "dedoose",
+    "qdacity",
+    "qda miner",
+    "refi-qda",
+    "caqdas",
+    # Dutch (DANS)
+    "kwalitatief",
+    "interview",           # same in Dutch
+    "focusgroep",
+    "etnograf",
+    # Norwegian (DataverseNO)
+    "kvalitativ",
+    "intervju",
+    "fokusgruppe",
+    # German (QualidataNet)
+    "qualitativ",
+    "leitfadeninterview",
+    "gruppendiskussion",
+    "biografieforschung",
+}
+
 # Human-readable directory names for each source (used in data/ folder)
 SOURCE_DIR_NAMES: dict[str, str] = {
     "qdr": "qdr",
