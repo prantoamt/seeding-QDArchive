@@ -15,6 +15,7 @@ from pipeline.config import (
     QDA_EXTENSIONS,
     QUALITATIVE_EXTENSIONS,
     QUALITATIVE_KEYWORDS,
+    SKIP_KIND_OF_DATA,
     SOURCE_DIR_NAMES,
     ensure_dirs,
 )
@@ -169,6 +170,27 @@ def _scrape_results(connector, source, results, session):
         if not metadata.files:
             console.print("  [yellow]No files in this dataset.[/yellow]")
             continue
+
+        # Skip non-data resource types (publications, presentations, etc.)
+        # unless the record contains a QDA file
+        if metadata.kind_of_data:
+            kod_values = {v.strip().lower() for v in metadata.kind_of_data}
+            if kod_values & SKIP_KIND_OF_DATA:
+                # Check for QDA files before skipping
+                has_qda_in_skip = any(
+                    Path(f["name"]).suffix.lower() in QDA_EXTENSIONS
+                    or "refi-qda" in f.get("friendly_type", "").lower()
+                    or "refiqda" in f.get("content_type", "").lower()
+                    for f in metadata.files
+                )
+                if not has_qda_in_skip:
+                    kod_str = "; ".join(metadata.kind_of_data)
+                    console.print(
+                        f"  [dim]Skipping — resource type not data: "
+                        f"'{kod_str}'[/dim]"
+                    )
+                    skipped_count += 1
+                    continue
 
         # Always keep datasets that contain QDA files, regardless of description
         has_qda_file = any(

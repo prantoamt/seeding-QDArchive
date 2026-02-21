@@ -29,6 +29,22 @@ QDA_EXTENSIONS = {
 
 QUALITATIVE_EXTENSIONS = {".txt", ".pdf", ".rtf", ".docx"}
 
+# kind_of_data values that are NOT qualitative research data.
+# Records with these types are saved as metadata-only (no download).
+# Source: Zenodo resource_type.type values; Dataverse kindOfData is free-text.
+SKIP_KIND_OF_DATA = {
+    "publication",
+    "presentation",
+    "poster",
+    "lesson",
+    "software",
+    "workflow",
+    "image",
+    "video",
+    "event",
+    "model",
+}
+
 # Keywords that signal qualitative relevance in a dataset description.
 # Checked case-insensitively; includes common non-English equivalents.
 QUALITATIVE_KEYWORDS = {
