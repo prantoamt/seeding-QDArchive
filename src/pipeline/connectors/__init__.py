@@ -15,7 +15,6 @@ CONNECTORS: dict[str, BaseConnector] = {
     "zenodo": ZenodoConnector(),
     "dryad": DryadConnector(),
     "ukds": UKDataServiceConnector(),
-    "qualidatanet": QualidataNetConnector(),
 }
 
 __all__ = [

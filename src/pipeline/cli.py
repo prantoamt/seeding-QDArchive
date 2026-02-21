@@ -748,12 +748,13 @@ def list_sources() -> None:
     for name, connector in CONNECTORS.items():
         console.print(f"  {name:<15} {connector.name:<45} [green]ready[/green]")
 
-    planned = [
-        ("qualiservice", "Qualiservice (scraper)"),
+    skipped = [
+        ("qualidatanet", "QualidataNet — metadata-only portal"),
+        ("qualiservice", "Qualiservice — formal contract required"),
     ]
-    for name, desc in planned:
+    for name, desc in skipped:
         if name not in CONNECTORS:
-            console.print(f"  {name:<15} {desc:<45} [yellow]planned[/yellow]")
+            console.print(f"  {name:<15} {desc:<45} [dim]skipped[/dim]")
 
 
 if __name__ == "__main__":
