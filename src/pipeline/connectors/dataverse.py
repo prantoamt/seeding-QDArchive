@@ -1,4 +1,4 @@
-"""Dataverse API connector — works for QDR, DANS, DataverseNO."""
+"""Dataverse API connector — works for any Dataverse installation."""
 
 import logging
 import re
@@ -19,9 +19,19 @@ DOWNLOAD_TIMEOUT = 120.0
 MAX_RETRIES = 3
 RETRY_DELAY = 2.0  # seconds, doubles each retry
 
+# Maximum datasets returned by search (prevents runaway pagination on large instances)
+MAX_SEARCH_RESULTS = 500
+
 
 class DataverseConnector(BaseConnector):
-    """Connector for Dataverse-based repositories (QDR, DANS, DataverseNO)."""
+    """Connector for Dataverse-based repositories.
+
+    Works for any standard Dataverse installation (QDR, DANS, DataverseNO,
+    Harvard, Borealis, AUSSDA, etc.). Large installations like Harvard index
+    datasets from other Dataverse instances (harvested datasets); these are
+    automatically excluded from search results via ``fq=-isHarvested:true``
+    to avoid 401 errors when fetching metadata.
+    """
 
     def __init__(self, base_url: str, instance_name: str) -> None:
         self._base_url = base_url.rstrip("/")
@@ -36,6 +46,7 @@ class DataverseConnector(BaseConnector):
         results: list[SearchResult] = []
         per_page = 100
         start = 0
+        total_count = 0
 
         while True:
             params: dict[str, str | int] = {
@@ -43,6 +54,7 @@ class DataverseConnector(BaseConnector):
                 "type": "dataset",
                 "per_page": per_page,
                 "start": start,
+                "fq": "-isHarvested:true",
             }
 
             resp = httpx.get(
@@ -77,12 +89,22 @@ class DataverseConnector(BaseConnector):
 
             total_count = data.get("total_count", 0)
             start += per_page
-            if start >= total_count:
+            if start >= total_count or len(results) >= MAX_SEARCH_RESULTS:
                 break
 
-        logger.info(
-            "Search '%s' on %s returned %d datasets", query, self._instance_name, len(results)
-        )
+        if len(results) > MAX_SEARCH_RESULTS:
+            results = results[:MAX_SEARCH_RESULTS]
+
+        if len(results) < total_count:
+            logger.info(
+                "Search '%s' on %s returned %d of %d datasets (capped at %d)",
+                query, self._instance_name, len(results), total_count, MAX_SEARCH_RESULTS,
+            )
+        else:
+            logger.info(
+                "Search '%s' on %s returned %d datasets",
+                query, self._instance_name, len(results),
+            )
         return results
 
     def get_metadata(self, record_url: str) -> SearchResult:

@@ -225,7 +225,7 @@ def test_scrape_skips_already_cataloged(runner, sample_records):
         license_type="CC BY 4.0",
         license_url="https://creativecommons.org/licenses/by/4.0/",
         title="Test Dataset",
-        description="desc",
+        description="qualitative interview transcripts",
         authors="Doe",
         date_published="2024-01-01",
         tags=[],

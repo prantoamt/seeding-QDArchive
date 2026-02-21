@@ -13,6 +13,7 @@ from pipeline.config import (
     EXPORTS_DIR,
     PROJECT_ROOT,
     QDA_EXTENSIONS,
+    QUALITATIVE_EXTENSIONS,
     SOURCE_DIR_NAMES,
     ensure_dirs,
 )
@@ -47,9 +48,10 @@ def _get_connector(source: str):
 
 
 def _save_metadata_only(
-    session, source, result, metadata, finfo, fname, file_ext, is_qda, dir_name=None,
+    session, source, result, metadata, finfo, fname, file_ext, is_qda,
+    dir_name=None, notes="access restricted",
 ):
-    """Save a metadata-only DB record for a file we couldn't download (e.g. 403)."""
+    """Save a metadata-only DB record for a file we couldn't download."""
     existing = (
         session.query(File)
         .filter_by(source_name=source, download_url=finfo["download_url"], file_name=fname)
@@ -93,7 +95,7 @@ def _save_metadata_only(
         uploader_name=metadata.uploader_name or None,
         uploader_email=metadata.uploader_email or None,
         is_qda_file=is_qda,
-        notes="access restricted",
+        notes=notes,
     )
     session.add(file_record)
     session.commit()
@@ -163,6 +165,12 @@ def _scrape_results(connector, source, results, session):
             skipped_count += 1
             continue
 
+        # Skip datasets whose description doesn't mention "qualitative"
+        if metadata.description and "qualitative" not in metadata.description.lower():
+            console.print("  [dim]Skipping — description has no qualitative relevance[/dim]")
+            skipped_count += 1
+            continue
+
         if not metadata.files:
             console.print("  [yellow]No files in this dataset.[/yellow]")
             continue
@@ -179,6 +187,20 @@ def _scrape_results(connector, source, results, session):
                 or "refi-qda" in friendly.lower()
                 or "refiqda" in ctype.lower()
             )
+
+            # Only download QDA files and qualitative data formats;
+            # save everything else as metadata-only
+            if not is_qda and file_ext not in QUALITATIVE_EXTENSIONS:
+                _save_metadata_only(
+                    session, source, result, metadata, finfo,
+                    fname, file_ext, is_qda, dir_name=None,
+                    notes="irrelevant file type",
+                )
+                console.print(
+                    f"  [dim]{fname} ({file_ext}) — metadata only "
+                    f"(not qualitative)[/dim]"
+                )
+                continue
 
             # Build storage path
             if "persistentId=" in result.source_url:

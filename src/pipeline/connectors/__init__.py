@@ -11,6 +11,7 @@ CONNECTORS: dict[str, BaseConnector] = {
     "qdr": DataverseConnector("https://data.qdr.syr.edu", "qdr"),
     "dans": DataverseConnector("https://ssh.datastations.nl", "dans"),
     "dataverseno": DataverseConnector("https://dataverse.no", "dataverseno"),
+    "harvard": DataverseConnector("https://dataverse.harvard.edu", "harvard"),
     "zenodo": ZenodoConnector(),
     "dryad": DryadConnector(),
     "ukds": UKDataServiceConnector(),

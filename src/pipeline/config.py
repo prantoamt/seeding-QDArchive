@@ -34,6 +34,7 @@ SOURCE_DIR_NAMES: dict[str, str] = {
     "qdr": "qdr",
     "dans": "dans",
     "dataverseno": "dataverse-no",
+    "harvard": "harvard",
     "zenodo": "zenodo",
     "dryad": "dryad",
     "ukds": "uk-data-service",
