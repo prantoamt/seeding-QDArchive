@@ -358,32 +358,24 @@ def _scrape_results(connector, source, results, session):
     return downloaded_count, restricted_count, skipped_count
 
 
-@cli.command()
-@click.argument("source")
-@click.option("--limit", "-n", default=None, type=int, help="Max datasets per query.")
-@click.option("--query", "-q", default=None, help="Search query string.")
-@click.option(
-    "--queries-file", "-f", default=None,
-    type=click.Path(exists=True),
-    help="Text file with one search query per line.",
-)
-def scrape(
-    source: str, limit: int | None, query: str | None, queries_file: str | None
-) -> None:
-    """Scrape and download data from a source."""
-    connector = _get_connector(source)
-
-    # Build list of queries
+def _load_queries(
+    queries_file: str | None, query: str | None,
+) -> list[str]:
+    """Build a list of search queries from a file, a single string, or the default."""
     if queries_file:
-        queries = [
+        return [
             line.strip() for line in Path(queries_file).read_text().splitlines()
             if line.strip() and not line.strip().startswith("#")
         ]
-    elif query:
-        queries = [query]
-    else:
-        queries = ["qualitative"]
+    if query:
+        return [query]
+    return ["qualitative"]
 
+
+def _scrape_source(
+    connector, source: str, queries: list[str], limit: int | None,
+) -> tuple[int, int, int]:
+    """Run all queries against a single source. Returns (downloaded, restricted, skipped)."""
     session = get_session()
     total_downloaded = 0
     total_restricted = 0
@@ -422,11 +414,152 @@ def scrape(
     finally:
         session.close()
 
+    return total_downloaded, total_restricted, total_skipped
+
+
+@cli.command()
+@click.argument("source")
+@click.option("--limit", "-n", default=None, type=int, help="Max datasets per query.")
+@click.option("--query", "-q", default=None, help="Search query string.")
+@click.option(
+    "--queries-file", "-f", default=None,
+    type=click.Path(exists=True),
+    help="Text file with one search query per line.",
+)
+def scrape(
+    source: str, limit: int | None, query: str | None, queries_file: str | None
+) -> None:
+    """Scrape and download data from a source."""
+    connector = _get_connector(source)
+    queries = _load_queries(queries_file, query)
+
+    dl, rest, skip = _scrape_source(connector, source, queries, limit)
+
     console.print(
         f"\n[bold]All done.[/bold] Queries: {len(queries)}, "
-        f"Downloaded: {total_downloaded}, "
-        f"Restricted (metadata only): {total_restricted}, "
-        f"Skipped (license): {total_skipped}"
+        f"Downloaded: {dl}, "
+        f"Restricted (metadata only): {rest}, "
+        f"Skipped (license): {skip}"
+    )
+
+
+@cli.command("scrape-all")
+@click.option(
+    "--queries-file", "-f", default=None,
+    type=click.Path(exists=True),
+    help="Text file with one search query per line (default: queries.txt).",
+)
+@click.option("--limit", "-n", default=None, type=int, help="Max datasets per query per source.")
+@click.option("--retries", "-r", default=1, type=int, help="Retries for fully-failed sources.")
+def scrape_all(
+    queries_file: str | None, limit: int | None, retries: int,
+) -> None:
+    """Scrape all sources sequentially with per-source error handling."""
+    # Default to queries.txt in project root if it exists
+    if queries_file is None:
+        default_qf = PROJECT_ROOT / "queries.txt"
+        if default_qf.exists():
+            queries_file = str(default_qf)
+    queries = _load_queries(queries_file, None)
+    console.print(
+        f"[bold]Scraping all {len(CONNECTORS)} sources "
+        f"with {len(queries)} queries (limit={limit or 'none'}, retries={retries})[/bold]\n"
+    )
+
+    # Track per-source results: {source: {status, downloaded, restricted, skipped, error}}
+    source_results: dict[str, dict] = {}
+    failed_sources: list[str] = list()
+
+    for source, connector in CONNECTORS.items():
+        console.print(f"\n[bold cyan]>>> Source: {source}[/bold cyan]")
+        try:
+            dl, rest, skip = _scrape_source(connector, source, queries, limit)
+            source_results[source] = {
+                "status": "OK",
+                "downloaded": dl,
+                "restricted": rest,
+                "skipped": skip,
+                "error": None,
+            }
+        except Exception as e:
+            logger.exception("Source %s failed", source)
+            console.print(f"[red]Source {source} failed: {e}[/red]")
+            source_results[source] = {
+                "status": "FAILED",
+                "downloaded": 0,
+                "restricted": 0,
+                "skipped": 0,
+                "error": str(e),
+            }
+            failed_sources.append(source)
+
+    # Retry failed sources
+    for attempt in range(1, retries + 1):
+        if not failed_sources:
+            break
+        console.print(
+            f"\n[bold yellow]Retrying {len(failed_sources)} failed source(s) "
+            f"(attempt {attempt}/{retries})[/bold yellow]"
+        )
+        still_failed: list[str] = []
+        for source in failed_sources:
+            connector = CONNECTORS[source]
+            console.print(f"\n[bold cyan]>>> Retry: {source}[/bold cyan]")
+            try:
+                dl, rest, skip = _scrape_source(connector, source, queries, limit)
+                source_results[source] = {
+                    "status": "OK",
+                    "downloaded": dl,
+                    "restricted": rest,
+                    "skipped": skip,
+                    "error": None,
+                }
+            except Exception as e:
+                logger.exception("Source %s retry %d failed", source, attempt)
+                console.print(f"[red]Source {source} retry failed: {e}[/red]")
+                source_results[source]["error"] = str(e)
+                still_failed.append(source)
+        failed_sources = still_failed
+
+    _print_scrape_all_summary(source_results)
+
+
+def _print_scrape_all_summary(source_results: dict[str, dict]) -> None:
+    """Print a Rich summary table of scrape-all results."""
+    table = Table(title="Scrape-all Summary")
+    table.add_column("Source", style="bold", width=14)
+    table.add_column("Status", width=8)
+    table.add_column("Downloaded", justify="right", width=11)
+    table.add_column("Restricted", justify="right", width=11)
+    table.add_column("Skipped", justify="right", width=8)
+    table.add_column("Error", max_width=40)
+
+    total_dl = total_rest = total_skip = 0
+    ok_count = fail_count = 0
+
+    for source, info in source_results.items():
+        status_style = "[green]OK[/green]" if info["status"] == "OK" else "[red]FAILED[/red]"
+        table.add_row(
+            source,
+            status_style,
+            str(info["downloaded"]),
+            str(info["restricted"]),
+            str(info["skipped"]),
+            info["error"] or "",
+        )
+        total_dl += info["downloaded"]
+        total_rest += info["restricted"]
+        total_skip += info["skipped"]
+        if info["status"] == "OK":
+            ok_count += 1
+        else:
+            fail_count += 1
+
+    console.print()
+    console.print(table)
+    console.print(
+        f"\n[bold]Totals:[/bold] {ok_count} succeeded, {fail_count} failed | "
+        f"Downloaded: {total_dl}, Restricted: {total_rest}, Skipped: {total_skip}"
     )
 
 

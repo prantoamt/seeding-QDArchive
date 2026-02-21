@@ -367,7 +367,7 @@ def test_extract_total_missing():
 
 
 def test_connector_registry():
+    """QualidataNet is metadata-only and not in the active connector registry."""
     from pipeline.connectors import CONNECTORS
 
-    assert "qualidatanet" in CONNECTORS
-    assert isinstance(CONNECTORS["qualidatanet"], QualidataNetConnector)
+    assert "qualidatanet" not in CONNECTORS

@@ -14,6 +14,7 @@ pdm run pipeline <command> [options]
 |---|---|
 | [`search`](#pipeline-search) | Search a data source for qualitative data |
 | [`scrape`](#pipeline-scrape) | Download data from a source |
+| [`scrape-all`](#pipeline-scrape-all) | Scrape all sources sequentially |
 | [`db`](#pipeline-db) | Browse the metadata database |
 | [`show`](#pipeline-show) | Inspect full record details |
 | [`status`](#pipeline-status) | Collection progress |
@@ -128,6 +129,57 @@ thematic analysis
   Duplicate (hash match): codebook.pdf            # Already in DB, skipped
 
 Done. Queries: 1, Downloaded: 12, Restricted (metadata only): 8, Skipped (license): 2
+```
+
+---
+
+## `pipeline scrape-all`
+
+Run `scrape` across **all** configured sources sequentially. If a source fails entirely (connector-level error), it is retried after all other sources complete.
+
+```
+pipeline scrape-all [options]
+```
+
+### Options
+
+| Option | Short | Default | Description |
+|---|---|---|---|
+| `--queries-file` | `-f` | `queries.txt` | Text file with one query per line |
+| `--limit` | `-n` | all | Max datasets per query per source |
+| `--retries` | `-r` | `1` | Times to retry fully-failed sources |
+
+> **Note:** If no `--queries-file` is given, the command looks for `queries.txt` in the project root. If that file doesn't exist, the default query `"qualitative"` is used.
+
+### Error Handling (3 tiers)
+
+- **File-level** (existing): individual download/metadata failures caught and skipped
+- **Query-level** (existing): search failures caught, next query continues
+- **Connector-level** (new): if a source fails entirely, it's logged and retried after all others
+
+### Examples
+
+```bash
+# Scrape all sources with default queries.txt
+pdm run pipeline scrape-all
+
+# Limit to 10 datasets per query per source
+pdm run pipeline scrape-all -n 10
+
+# Custom queries file, 2 retries for failed sources
+pdm run pipeline scrape-all -f my-queries.txt -r 2
+```
+
+### Summary Output
+
+```
+              Scrape-all Summary
+ Source      Status  Downloaded  Restricted  Skipped  Error
+ qdr         OK          120          89       15
+ dans        OK           45          12        8
+ zenodo      FAILED        0           0        0     Connection refused
+
+Totals: 2 succeeded, 1 failed | Downloaded: 165, Restricted: 101, Skipped: 23
 ```
 
 ---
