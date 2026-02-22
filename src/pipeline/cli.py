@@ -924,7 +924,6 @@ def list_sources() -> None:
         console.print(f"  {name:<15} {connector.name:<45} [green]ready[/green]")
 
     skipped = [
-        ("qualidatanet", "QualidataNet — metadata-only portal"),
         ("qualiservice", "Qualiservice — formal contract required"),
     ]
     for name, desc in skipped:
