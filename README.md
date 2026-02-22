@@ -18,71 +18,130 @@ _Academic project (10 ECTS) — FAU Erlangen-Nurnberg_
 
 This pipeline searches open qualitative data repositories, downloads files and metadata, stores everything in a local SQLite database, and exports results for further analysis. It targets **QDA project files** (REFI/qdpx, MAXQDA, NVivo, ATLAS.ti, Dedoose, QDAcity, QDA Miner) and **general qualitative data** (interview transcripts, research articles).
 
-The project has two parts:
+See [`datasources.csv`](datasources.csv) for the full list of evaluated repositories (status, API details, licensing, and skip reasons).
 
-|       | Phase               | Deliverable                      | Deadline |
-| ----- | ------------------- | -------------------------------- | -------- |
-| **1** | Data Acquisition    | Metadata DB + downloaded files   | March 15 |
-| **2** | Data Classification | Merged DB with ISIC Rev. 5 codes | April 12 |
-
-## Data Sources
-
-| Source                                                 | Type    | API URL                                    | Coverage                                          |
-| ------------------------------------------------------ | ------- | ------------------------------------------ | ------------------------------------------------- |
-| [Zenodo](https://zenodo.org)                           | API     | `https://zenodo.org/api/`                  | Open research repository                          |
-| [QDR](https://data.qdr.syr.edu)                        | API     | `https://data.qdr.syr.edu/api/`            | Qualitative Data Repository (Syracuse)            |
-| [DANS](https://ssh.datastations.nl)                    | API     | `https://ssh.datastations.nl/api/`         | Dutch national research data archive              |
-| [DataverseNO](https://dataverse.no)                    | API     | `https://dataverse.no/api/`                | Norwegian research data archive                   |
-| [UK Data Service](https://reshare.ukdataservice.ac.uk) | API     | `https://reshare.ukdataservice.ac.uk/cgi/` | UK national data archive (ReShare EPrints)        |
-| [QualidataNet](https://www.qualidatanet.com)           | API     | `https://www.qualidatanet.com/es/`         | Federated qualitative data portal (metadata-only) |
-| [Qualiservice](https://qualiservice.org)               | Scraper | `https://www.qualiservice.org/`            | German qualitative data service                   |
-
-## Quick Start
+## Setup
 
 ### Prerequisites
 
 - Python 3.10+
 - [PDM](https://pdm-project.org) package manager
 
-### Installation
+### Install
 
 ```bash
-git clone git@github.com:prantoamt/seeding-QDArchive.git && cd seeding-QDArchive
+git clone git@github.com:prantoamt/seeding-QDArchive.git
+cd seeding-QDArchive
 pdm install
 ```
 
-### Usage
+Verify the installation:
 
 ```bash
-pdm run pipeline search qdr -q "qualitative"         # Search QDR
-pdm run pipeline scrape qdr -f queries.txt           # Scrape with query file
-pdm run pipeline db --qda-only                       # Browse QDA files
-pdm run pipeline show 6 49 50                        # Inspect records
-pdm run pipeline status                              # Collection progress
-pdm run pipeline export                              # Export to CSV
+pdm run pipeline --help
 ```
 
-## Project Structure
+## Usage
 
-```
-src/pipeline/
-├── cli.py                  # Click CLI entry point
-├── config.py               # Paths, constants, QDA extensions
-├── connectors/
-│   ├── base.py             # Abstract BaseConnector interface
-│   └── dataverse.py        # Dataverse API connector (QDR, DANS, DataverseNO)
-├── db/
-│   ├── models.py           # SQLAlchemy models (files table)
-│   ├── connection.py       # DB engine and session management
-│   └── export.py           # CSV export
-├── storage/
-│   └── file_manager.py     # File organization + SHA-256 hashing
-└── utils/
-    ├── logging.py           # Rich console + file logging
-    └── license.py           # Open license validation
+### Scrape all sources at once
+
+This runs every configured source using the queries in `queries.txt`:
+
+```bash
+pdm run pipeline scrape-all
 ```
 
-**Data layout on disk:**
+To limit to 10 datasets per query per source:
+
+```bash
+pdm run pipeline scrape-all -n 10
+```
+
+To use a custom queries file and retry failed sources twice:
+
+```bash
+pdm run pipeline scrape-all -f my-queries.txt -r 2
+```
+
+### Scrape a single source
+
+Available sources: `qdr`, `dans`, `dataverseno`, `harvard`, `zenodo`, `ukds`
+
+```bash
+# Scrape QDR with all queries from queries.txt
+pdm run pipeline scrape qdr -f queries.txt
+
+# Scrape Zenodo with a single query, limit 5 datasets
+pdm run pipeline scrape zenodo -q "qualitative interview" -n 5
+
+# Scrape DANS with default query ("qualitative")
+pdm run pipeline scrape dans
+```
+
+### Search without downloading
+
+Preview what a source returns before scraping:
+
+```bash
+pdm run pipeline search qdr -q "interview transcript"
+```
+
+### Browse and inspect results
+
+```bash
+# Browse all records
+pdm run pipeline db
+
+# Filter by source
+pdm run pipeline db -s qdr
+
+# Show only QDA files
+pdm run pipeline db --qda-only
+
+# Search across title, description, keywords
+pdm run pipeline db --search "interview"
+
+# Filter by language, software, file type
+pdm run pipeline db --language english --has-software
+pdm run pipeline db --file-type pdf -n 100
+
+# Show full details for specific records
+pdm run pipeline show 6 49 50
+```
+
+### Check progress
+
+```bash
+pdm run pipeline status
+```
+
+### Export
+
+```bash
+# Export to default location (exports/metadata.csv)
+pdm run pipeline export
+
+# Export to a custom path
+pdm run pipeline export -o results/metadata.csv
+```
+
+### List available sources
+
+```bash
+pdm run pipeline list-sources
+```
+
+### Reset everything
+
+Deletes the database, all downloaded data, exports, and logs:
+
+```bash
+pdm run pipeline reset
+```
+
+## Data layout
+
+Downloaded files are stored as:
 
 ```
 data/{source_name}/{title-slug}-{record_id}/{filename}
@@ -95,15 +154,3 @@ pdm run pytest               # Run tests
 pdm run ruff check src/      # Lint
 pdm run ruff format src/     # Format
 ```
-
-## Tech Stack
-
-| Tool                                                             | Role                             |
-| ---------------------------------------------------------------- | -------------------------------- |
-| [httpx](https://www.python-httpx.org/)                           | HTTP client for API calls        |
-| [Click](https://click.palletsprojects.com/)                      | CLI framework                    |
-| [SQLAlchemy](https://www.sqlalchemy.org/)                        | ORM for SQLite metadata DB       |
-| [Beautiful Soup](https://www.crummy.com/software/BeautifulSoup/) | HTML scraping                    |
-| [Rich](https://rich.readthedocs.io/)                             | Terminal formatting and progress |
-| [Ruff](https://docs.astral.sh/ruff/)                             | Linting and formatting           |
-| [pytest](https://docs.pytest.org/)                               | Testing                          |
