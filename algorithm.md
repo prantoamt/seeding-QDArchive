@@ -5,6 +5,7 @@
 - [1. Overview](#1-overview)
 - [2. Entry Points](#2-entry-points)
 - [3. Query Loading](#3-query-loading)
+  - [Search query design](#search-query-design-queriestxt)
 - [4. Search Phase](#4-search-phase)
 - [5. Metadata Fetch](#5-metadata-fetch)
 - [6. Filter Cascade](#6-filter-cascade)
@@ -59,6 +60,43 @@ The function `_load_queries()` resolves search terms in priority order:
 | 1 | `--queries-file` | Reads file line-by-line; strips blank lines and `#` comments |
 | 2 | `--query` | Single string wrapped in a list |
 | 3 | Default | `["qualitative"]` |
+
+### Search query design (`queries.txt`)
+
+The default query file uses a two-pass strategy to maximize recall while keeping results relevant to qualitative research.
+
+**First pass — QDA-specific queries** target datasets that directly involve qualitative data analysis software or file formats:
+
+| Query | Rationale |
+|-------|-----------|
+| `qdpx`, `REFI-QDA` | The REFI-QDA standard interchange format. Any dataset mentioning these almost certainly contains a QDA project file. |
+| `NVivo`, `ATLAS.ti`, `MaxQDA`, `Dedoose`, `QDAcity`, `QDA Miner`, `QualCoder` | The major CAQDAS (Computer-Assisted Qualitative Data Analysis Software) tools. Researchers cite the software they used in dataset descriptions, making these high-precision search terms. |
+| `CAQDAS` | The umbrella acronym for the software category itself. |
+| `coded transcript` | A transcript that has undergone qualitative coding — strong signal that QDA was performed on the data. |
+
+**Second pass — qualitative data queries** target the raw data that QDA is performed on, using established methodology terms from qualitative research:
+
+| Query | Rationale |
+|-------|-----------|
+| `interview transcript`, `semi-structured interview`, `focus group`, `in-depth interview`, `biographical interview`, `life history interview` | The most common qualitative data collection methods. These are standard terms in social science methodology textbooks (Bryman, 2016; Creswell & Poth, 2018). |
+| `grounded theory`, `thematic analysis`, `narrative analysis`, `interpretative phenomenological`, `interpretive research` | Recognized qualitative analysis methodologies. Researchers tag their datasets with the methodology they employed. |
+| `qualitative research`, `qualitative data`, `qualitative coding`, `codebook qualitative` | Direct references to the qualitative paradigm. |
+| `ethnography`, `participant observation`, `action research qualitative` | Fieldwork-based qualitative approaches that produce rich textual data. |
+| `open-ended responses`, `open-ended questions` | Survey instruments with qualitative components — these generate textual data suitable for QDA. |
+| `mixed methods qualitative` | Mixed-methods studies that include a qualitative component alongside quantitative analysis. |
+
+**Multilingual queries** are translations of the core terms, targeted at repositories that serve non-English-speaking research communities:
+
+| Language | Target repositories | Example queries |
+|----------|-------------------|-----------------|
+| German | Zenodo, QualidataNet | `qualitative Forschung`, `Leitfadeninterview`, `Gruppendiskussion` |
+| Dutch | DANS | `kwalitatief onderzoek`, `diepte-interview`, `transcriptie interview` |
+| Norwegian | DataverseNO | `kvalitativ forskning`, `dybdeintervju`, `fokusgruppe` |
+| Spanish | Zenodo | `investigación cualitativa`, `entrevista cualitativa`, `grupo focal` |
+| French | Zenodo | `recherche qualitative`, `entretien qualitatif`, `analyse thématique` |
+| Portuguese | Zenodo | `pesquisa qualitativa`, `entrevista qualitativa`, `análise temática` |
+
+These translations were chosen because each target repository hosts significant content in the respective language. Without them, non-English qualitative datasets would be invisible to the pipeline.
 
 ## 4. Search Phase
 
@@ -133,11 +171,44 @@ This gate filters out non-data resources that repositories sometimes classify al
 
 ### Gate 3 — Qualitative Relevance
 
-If the dataset contains no QDA files, the pipeline checks whether the description and keywords contain at least one of 52 qualitative keywords spanning 7 languages (English, Dutch, Norwegian, German, Spanish, French, Portuguese). Keywords include research method terms ("interview", "focus group", "ethnograph", "grounded theory"), QDA software names ("NVivo", "ATLAS.ti", "MAXQDA"), and their non-English equivalents ("kwalitatief", "kvalitativ", "entrevista").
+If the dataset contains no QDA files, the pipeline checks whether the description and keywords contain at least one of 52 qualitative keywords spanning 7 languages. The check is case-insensitive and uses substring matching. No qualitative signal → **skip entire dataset**.
 
-The check is case-insensitive and uses substring matching (e.g., "ethnograph" matches both "ethnography" and "ethnographic").
+The keywords in `QUALITATIVE_KEYWORDS` are organized into four tiers by signal strength:
 
-No qualitative signal → **skip entire dataset**.
+**Tier 1 — QDA software names (highest precision).** A dataset mentioning a specific CAQDAS tool almost certainly contains qualitative analysis data:
+
+> `nvivo`, `atlas.ti`, `maxqda`, `dedoose`, `qdacity`, `qda miner`, `refi-qda`, `caqdas`
+
+These terms produce near-zero false positives because they refer exclusively to qualitative analysis software.
+
+**Tier 2 — Methodology-specific terms (high precision).** These are qualitative research methodologies with no quantitative counterpart. A dataset tagged with these was produced using a qualitative approach:
+
+> `grounded theory`, `thematic analysis`, `narrative analysis`, `phenomenolog*`, `discourse analysis`, `participant observation`, `ethnograph*`, `coding scheme`, `coded data`
+
+The use of stem prefixes (e.g., `ethnograph` matching "ethnography" and "ethnographic"; `phenomenolog` matching "phenomenology" and "phenomenological") captures morphological variants without requiring multiple entries.
+
+**Tier 3 — Data collection terms (moderate precision).** These describe common qualitative data collection methods. They are less exclusive than Tier 2 (a quantitative survey could mention "interview"), but in the context of research data repositories they strongly correlate with qualitative datasets:
+
+> `interview`, `focus group`, `semi-structured`, `in-depth interview`, `transcript`, `field note`, `fieldwork`, `life histor*`, `oral histor*`, `open-ended`, `case study`, `content analysis`
+
+The term `interview` is intentionally broad: in research data repositories, the vast majority of datasets mentioning "interview" contain qualitative interview data, not quantitative survey instruments. The term `content analysis` can refer to quantitative content analysis, but this is a known precision trade-off accepted in favor of recall.
+
+**Tier 4 — General qualitative terms (broadest recall).** The umbrella term that catches datasets self-describing as qualitative:
+
+> `qualitative`
+
+**Multilingual equivalents** mirror Tiers 3–4 for each target language, using the same substring-matching strategy:
+
+| Language | Keywords | Rationale |
+|----------|----------|-----------|
+| Dutch | `kwalitatief`, `focusgroep`, `etnograf` | DANS hosts primarily Dutch-language research |
+| Norwegian | `kvalitativ`, `intervju`, `fokusgruppe` | DataverseNO hosts Norwegian-language research |
+| German | `qualitativ`, `leitfadeninterview`, `gruppendiskussion`, `biografieforschung`, `inhaltsanalyse`, `transkript` | German qualitative research tradition uses distinct terminology (e.g., Leitfadeninterview for guided interview) |
+| Spanish | `cualitativ*`, `entrevista`, `grupo focal`, `análisis temático` | Zenodo hosts Spanish-language social science data |
+| French | `qualitatif`, `entretien`, `groupe de discussion` | Zenodo hosts French-language social science data |
+| Portuguese | `pesquisa qualitativa`, `entrevista qualitativa`, `grupo focal`, `análise temática` | Zenodo hosts Portuguese-language social science data |
+
+**Design trade-off: recall over precision.** The keyword list intentionally favors false positives over false negatives. A dataset that incorrectly passes Gate 3 still faces Gate 4 (file-type filtering), which only downloads QDA and qualitative file formats (`.qdpx`, `.pdf`, `.txt`, `.rtf`, `.docx`). The combination of Gates 3 and 4 together provides sufficient precision — Gate 3 eliminates clearly non-qualitative datasets (e.g., astronomical observations, genomic data), while Gate 4 prevents downloading irrelevant file types (e.g., `.csv`, `.zip`, `.nc`) from borderline datasets.
 
 ### Gate 4 — File Type
 
