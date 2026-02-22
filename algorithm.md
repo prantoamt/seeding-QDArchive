@@ -1,5 +1,18 @@
 # Scraping Algorithm
 
+## Table of Contents
+
+- [1. Overview](#1-overview)
+- [2. Entry Points](#2-entry-points)
+- [3. Query Loading](#3-query-loading)
+- [4. Search Phase](#4-search-phase)
+- [5. Metadata Fetch](#5-metadata-fetch)
+- [6. Filter Cascade](#6-filter-cascade)
+- [7. Download & Deduplication](#7-download--deduplication)
+- [8. Record Storage](#8-record-storage)
+- [9. Error Handling](#9-error-handling)
+- [10. Reference](#10-reference)
+
 ## 1. Overview
 
 The pipeline searches open qualitative data repositories, applies a multi-stage filter cascade to identify relevant datasets, downloads qualifying files, deduplicates by content hash, and stores rich metadata in SQLite. The goal is to collect **QDA files** (`.qdpx`, `.mx`, `.nvpx`, etc.) and **qualitative data** (`.txt`, `.pdf`, `.rtf`, `.docx`) from six repositories across four countries.

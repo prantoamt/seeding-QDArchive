@@ -26,7 +26,6 @@ See [`datasources.csv`](datasources.csv) for the full list of evaluated reposito
 |----------|-------------|
 | [`algorithm.md`](algorithm.md) | Scraping algorithm — search, filter cascade, download, deduplication |
 | [`database.md`](database.md) | Database schema, field availability by source, query filters |
-| [`datasources.md`](datasources.md) | Detailed profiles for each data source |
 | [`datasources.csv`](datasources.csv) | Source of truth for all evaluated repositories |
 | [`report-draft-part-1.md`](report-draft-part-1.md) | Technical challenges report — Part 1: Data Acquisition |
 | [`open-questions.md`](open-questions.md) | Open questions to clarify with the professor |

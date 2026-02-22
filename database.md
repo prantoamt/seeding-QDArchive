@@ -4,6 +4,15 @@ The pipeline stores all file metadata in a single SQLite table (`files`). This d
 
 Database file: `pipeline.db` (gitignored)
 
+## Table of Contents
+
+- [Schema](#schema)
+- [Field Availability by Source](#field-availability-by-source)
+- [Query Filters](#query-filters)
+- [Deduplication Strategy](#deduplication-strategy)
+- [Schema Migration](#schema-migration)
+- [Export](#export)
+
 ---
 
 ## Schema
