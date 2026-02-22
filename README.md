@@ -20,6 +20,17 @@ This pipeline searches open qualitative data repositories, downloads files and m
 
 See [`datasources.csv`](datasources.csv) for the full list of evaluated repositories (status, API details, licensing, and skip reasons). For a detailed walkthrough of the scraping algorithm — search, filter cascade, download, deduplication, and storage — see [`algorithm.md`](algorithm.md).
 
+## Documentation
+
+| Document | Description |
+|----------|-------------|
+| [`algorithm.md`](algorithm.md) | Scraping algorithm — search, filter cascade, download, deduplication |
+| [`database.md`](database.md) | Database schema, field availability by source, query filters |
+| [`datasources.md`](datasources.md) | Detailed profiles for each data source |
+| [`datasources.csv`](datasources.csv) | Source of truth for all evaluated repositories |
+| [`report-draft-part-1.md`](report-draft-part-1.md) | Technical challenges report — Part 1: Data Acquisition |
+| [`open-questions.md`](open-questions.md) | Open questions to clarify with the professor |
+
 ## Setup
 
 ### Prerequisites
