@@ -109,7 +109,7 @@ class UKDataServiceConnector(BaseConnector):
                 title=item.get("title", ""),
                 description=_strip_html(item.get("abstract", "")),
                 authors=author_names,
-                date_published=item.get("date", ""),
+                date_published=_normalize_date(item.get("date", "")),
                 keywords=keywords,
                 tags=keywords,
             )
@@ -216,7 +216,7 @@ class UKDataServiceConnector(BaseConnector):
             authors=author_names,
             license_type=license_type,
             license_url=license_url,
-            date_published=data.get("date", ""),
+            date_published=_normalize_date(data.get("date", "")),
             keywords=keywords,
             tags=keywords,
             kind_of_data=kind_of_data,
@@ -315,6 +315,31 @@ def _build_file_list(eprint_id: int | str, documents: list) -> list[dict]:
                 "friendly_type": ext,
             })
     return files
+
+
+def _normalize_date(raw: str) -> str:
+    """Fix malformed UKDS dates to ISO 8601 (YYYY-MM-DD).
+
+    Handles:
+      "0005-01-2019" (DD-MM-YYYY with zero-padded day) → "2019-01-05"
+      "2019-01-0005" (YYYY-MM-DDDD with oversized day)  → "2019-01-05"
+    """
+    s = raw.strip()
+    m = re.match(r"^(\d+)-(\d+)-(\d+)$", s)
+    if not m:
+        return s
+    p1, p2, p3 = m.group(1), m.group(2), m.group(3)
+    y1, y3 = int(p1), int(p3)
+
+    if y1 > 31 and len(p1) == 4:
+        # Looks like YYYY-MM-DD(DD) — fix oversized day
+        day = str(int(p3)).zfill(2)
+        return f"{p1}-{p2}-{day}"
+    if y3 > 31 and len(p3) == 4:
+        # DD-MM-YYYY
+        day = str(int(p1)).zfill(2)
+        return f"{p3}-{p2}-{day}"
+    return s
 
 
 def _strip_html(text: str) -> str:

@@ -24,7 +24,7 @@ from pipeline.db.connection import get_session, init_db
 from pipeline.db.export import export_to_csv
 from pipeline.db.models import File
 from pipeline.storage.file_manager import compute_sha256, get_storage_path
-from pipeline.utils.license import is_open_license
+from pipeline.utils.license import is_open_license, normalize_license
 from pipeline.utils.logging import setup_logging
 
 console = Console()
@@ -71,7 +71,7 @@ def _save_metadata_only(
         file_size_bytes=finfo.get("size"),
         local_path=None,
         local_directory=dir_name,
-        license_type=metadata.license_type,
+        license_type=normalize_license(metadata.license_type),
         license_url=metadata.license_url,
         title=metadata.title,
         description=metadata.description,
@@ -281,8 +281,9 @@ def _scrape_results(connector, source, results, session):
                 )
             except httpx.HTTPStatusError as e:
                 if e.response.status_code == 403:
+                    finfo_restricted = {**finfo, "restricted": True}
                     _save_metadata_only(
-                        session, source, result, metadata, finfo,
+                        session, source, result, metadata, finfo_restricted,
                         fname, file_ext, is_qda, dir_name=dir_name,
                     )
                     restricted_count += 1
@@ -316,7 +317,7 @@ def _scrape_results(connector, source, results, session):
                 file_size_bytes=finfo.get("size"),
                 local_path=str(Path(local_path).relative_to(PROJECT_ROOT)),
                 local_directory=dir_name,
-                license_type=metadata.license_type,
+                license_type=normalize_license(metadata.license_type),
                 license_url=metadata.license_url,
                 title=metadata.title,
                 description=metadata.description,

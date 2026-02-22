@@ -189,6 +189,8 @@ class ZenodoConnector(BaseConnector):
                 "friendly_type": ext,
             })
 
+        license_url = f"https://spdx.org/licenses/{license_type}.html" if license_type else ""
+
         return SearchResult(
             source_name="zenodo",
             source_url=record_url,
@@ -196,6 +198,7 @@ class ZenodoConnector(BaseConnector):
             description=description,
             authors=author_names,
             license_type=license_type,
+            license_url=license_url,
             date_published=meta.get("publication_date", ""),
             keywords=keywords,
             tags=keywords,
@@ -249,8 +252,11 @@ class ZenodoConnector(BaseConnector):
 
 
 def _strip_html(text: str) -> str:
-    """Remove HTML tags and collapse whitespace."""
+    """Remove HTML tags, decode entities, and collapse whitespace."""
+    import html
+
     clean = re.sub(r"<[^>]+>", " ", text)
+    clean = html.unescape(clean)
     return re.sub(r"\s+", " ", clean).strip()
 
 

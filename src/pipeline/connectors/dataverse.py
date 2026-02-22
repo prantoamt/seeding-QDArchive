@@ -203,7 +203,7 @@ class DataverseConnector(BaseConnector):
         publications = []
         if isinstance(pub_list, list):
             for pub in pub_list:
-                citation_text = pub.get("publicationCitation", {}).get("value", "")
+                citation_text = _strip_html(pub.get("publicationCitation", {}).get("value", ""))
                 pub_url = pub.get("publicationURL", {}).get("value", "")
                 entry = citation_text or pub_url
                 if entry:
