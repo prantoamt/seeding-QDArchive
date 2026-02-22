@@ -18,7 +18,7 @@ _Academic project (10 ECTS) — FAU Erlangen-Nurnberg_
 
 This pipeline searches open qualitative data repositories, downloads files and metadata, stores everything in a local SQLite database, and exports results for further analysis. It targets **QDA project files** (REFI/qdpx, MAXQDA, NVivo, ATLAS.ti, Dedoose, QDAcity, QDA Miner) and **general qualitative data** (interview transcripts, research articles).
 
-See [`datasources.csv`](datasources.csv) for the full list of evaluated repositories (status, API details, licensing, and skip reasons).
+See [`datasources.csv`](datasources.csv) for the full list of evaluated repositories (status, API details, licensing, and skip reasons). For a detailed walkthrough of the scraping algorithm — search, filter cascade, download, deduplication, and storage — see [`algorithm.md`](algorithm.md).
 
 ## Setup
 
