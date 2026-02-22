@@ -1,5 +1,7 @@
-# Data and exports (large, user-specific)
+# Data and exports (large, user-specific — also covers symlinks)
+data
 data/
+exports
 exports/
 *.db
 

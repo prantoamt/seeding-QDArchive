@@ -62,8 +62,6 @@ pdm run pipeline status                              # Collection progress
 pdm run pipeline export                              # Export to CSV
 ```
 
-> **Full CLI documentation:** See [manual.md](manual.md) for all commands, options, and examples.
-
 ## Project Structure
 
 ```

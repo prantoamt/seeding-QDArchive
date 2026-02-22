@@ -596,11 +596,26 @@ def reset(yes: bool) -> None:
         DB_PATH.unlink()
         removed.append(f"Database: {DB_PATH}")
 
-    if DATA_DIR.exists():
+    if DATA_DIR.is_symlink():
+        # Symlink (e.g. NAS mount) — clear contents but keep the link
+        for child in DATA_DIR.iterdir():
+            if child.is_dir():
+                shutil.rmtree(child)
+            else:
+                child.unlink()
+        removed.append(f"Data (contents): {DATA_DIR}")
+    elif DATA_DIR.exists():
         shutil.rmtree(DATA_DIR)
         removed.append(f"Data: {DATA_DIR}")
 
-    if EXPORTS_DIR.exists():
+    if EXPORTS_DIR.is_symlink():
+        for child in EXPORTS_DIR.iterdir():
+            if child.is_dir():
+                shutil.rmtree(child)
+            else:
+                child.unlink()
+        removed.append(f"Exports (contents): {EXPORTS_DIR}")
+    elif EXPORTS_DIR.exists():
         shutil.rmtree(EXPORTS_DIR)
         removed.append(f"Exports: {EXPORTS_DIR}")
 
