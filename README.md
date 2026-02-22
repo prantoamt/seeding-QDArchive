@@ -97,6 +97,8 @@ pdm run pipeline db --file-type pdf -n 100
 pdm run pipeline show 6 49 50
 ```
 
+See [`database.md`](database.md) for the full schema, field availability by source, and all query filters.
+
 ### Check progress
 
 ```bash
