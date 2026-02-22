@@ -14,25 +14,6 @@ Questions to clarify with the professor or during coordination meetings.
     - Actual terms: documentation under CC BY-SA 4.0, data files accessible without restrictions for registered QDR users
     - No standard CC/CC0 license identifier is provided — should we include or skip these?
 
-### QualidataNet — Metadata Only, No File Downloads
-
-QualidataNet (`qualidatanet.com`) is a federated metadata portal operated by KonsortSWD / RDC Qualiservice (University of Bremen). It aggregates ~143 records from 6 German research data centers via an open Elasticsearch API. However, **none of the partner institutions allow unrestricted file downloads** — all require registration, formal applications, or usage agreements:
-
-| Data Center | Records | DOI Pattern | Access Requirement |
-|---|---|---|---|
-| FDZ Qualiservice (PANGAEA) | 58 | `doi.pangaea.de/10.1594/PANGAEA.*` | Login + signup required |
-| FDZ Bildung | 47 | `doi.org/10.7477/*` | Registration + formal application |
-| FDZ eLabour | 17 | `doi.org/10.60613/*` | Usage agreement/contract required |
-| FDZ DZHW | 12 | `doi.org/10.21249/DZHW:*` | Scientific Use File application |
-| QualiBi | 5 | `doi.org/10.25716/GUDE.*` | All rights reserved |
-| FDZ-BO | 4 | `doi.org/10.7478/*` | JS-rendered portal, no direct access |
-
-The `accessRestricted: false` field in QualidataNet's Elasticsearch API is misleading — it indicates metadata accessibility, not file downloadability.
-
-**Current approach:** Save all 143 records as metadata-only (title, authors, description, keywords, license, DOI, data center). No file downloads attempted.
-
-**Question for professor:** Should we attempt to register at individual data centers (e.g., FDZ Qualiservice via PANGAEA) to access files, or is metadata-only sufficient for QualidataNet?
-
 ---
 
 ## Part 2: Data Classification
@@ -53,8 +34,3 @@ The `accessRestricted: false` field in QualidataNet's Elasticsearch API is misle
 ### ISIC Rev. 5 Classification
 - Is there a reference mapping or example of qualitative data classified under ISIC that we can use as ground truth?
 
----
-
-## General
-
-- Should the git repository be **public or private**? Also — what license should the code use (MIT, Apache 2.0, GPL, etc.)?
