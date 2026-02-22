@@ -51,18 +51,6 @@ This runs every configured source using the queries in `queries.txt`:
 pdm run pipeline scrape-all
 ```
 
-To limit to 10 datasets per query per source:
-
-```bash
-pdm run pipeline scrape-all -n 10
-```
-
-To use a custom queries file and retry failed sources twice:
-
-```bash
-pdm run pipeline scrape-all -f my-queries.txt -r 2
-```
-
 ### Scrape a single source
 
 Available sources: `qdr`, `dans`, `dataverseno`, `harvard`, `zenodo`, `ukds`
