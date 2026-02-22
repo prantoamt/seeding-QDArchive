@@ -30,7 +30,6 @@ The project has two parts:
 | Source                                                 | Type    | API URL                                    | Coverage                                          |
 | ------------------------------------------------------ | ------- | ------------------------------------------ | ------------------------------------------------- |
 | [Zenodo](https://zenodo.org)                           | API     | `https://zenodo.org/api/`                  | Open research repository                          |
-| [Dryad](https://datadryad.org)                         | API     | `https://datadryad.org/api/v2/`            | Digital data repository                           |
 | [QDR](https://data.qdr.syr.edu)                        | API     | `https://data.qdr.syr.edu/api/`            | Qualitative Data Repository (Syracuse)            |
 | [DANS](https://ssh.datastations.nl)                    | API     | `https://ssh.datastations.nl/api/`         | Dutch national research data archive              |
 | [DataverseNO](https://dataverse.no)                    | API     | `https://dataverse.no/api/`                | Norwegian research data archive                   |

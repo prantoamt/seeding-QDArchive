@@ -303,7 +303,6 @@ Available sources:
   dans            dans                                          ready
   dataverseno     dataverseno                                   ready
   zenodo          zenodo                                        ready
-  dryad           dryad                                         ready
 ```
 
 ---

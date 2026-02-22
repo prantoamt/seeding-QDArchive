@@ -120,7 +120,6 @@ SOURCE_DIR_NAMES: dict[str, str] = {
     "dataverseno": "dataverse-no",
     "harvard": "harvard",
     "zenodo": "zenodo",
-    "dryad": "dryad",
     "ukds": "uk-data-service",
 }
 

@@ -33,14 +33,6 @@ The `accessRestricted: false` field in QualidataNet's Elasticsearch API is misle
 
 **Question for professor:** Should we attempt to register at individual data centers (e.g., FDZ Qualiservice via PANGAEA) to access files, or is metadata-only sufficient for QualidataNet?
 
-### Dryad — Downloads Blocked by AWS WAF
-
-Dryad's file download URLs (`/stash/downloads/file_stream/{id}`) are protected by AWS WAF bot detection. Automated downloads via httpx receive either HTTP 403 or a 202 response with a JavaScript challenge (`x-amzn-waf-action: challenge`). Search and metadata retrieval work fine via the public API.
-
-**Current approach:** Save all Dryad records as metadata-only (restricted). A future enhancement could use a headless browser (Playwright) to bypass the WAF challenge.
-
-**Question for professor:** Is metadata-only acceptable for Dryad, or should we invest time in a headless browser approach?
-
 ---
 
 ## Part 2: Data Classification
