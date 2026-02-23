@@ -128,6 +128,13 @@ SOURCE_DIR_NAMES: dict[str, str] = {
     "repod": "repod",
     "heidata": "heidata",
     "bonndata": "bonndata",
+    "dataverselv": "dataverse-lv",
+    "crossda": "crossda",
+    "darus": "darus",
+    "rsu": "rsu",
+    "uva": "uva",
+    "nycu": "nycu",
+    "pucp": "pucp",
 }
 
 
