@@ -122,6 +122,12 @@ SOURCE_DIR_NAMES: dict[str, str] = {
     "zenodo": "zenodo",
     "ukds": "uk-data-service",
     "sodha": "sodha",
+    "acss": "acss",
+    "kuleuven": "kuleuven",
+    "uclouvain": "uclouvain",
+    "repod": "repod",
+    "heidata": "heidata",
+    "bonndata": "bonndata",
 }
 
 

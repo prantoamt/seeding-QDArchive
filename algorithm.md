@@ -16,7 +16,7 @@
 
 ## 1. Overview
 
-The pipeline searches open qualitative data repositories, applies a multi-stage filter cascade to identify relevant datasets, downloads qualifying files, deduplicates by content hash, and stores rich metadata in SQLite. The goal is to collect **QDA files** (`.qdpx`, `.mx`, `.nvpx`, etc.) and **qualitative data** (`.txt`, `.pdf`, `.rtf`, `.docx`) from seven repositories across five countries.
+The pipeline searches open qualitative data repositories, applies a multi-stage filter cascade to identify relevant datasets, downloads qualifying files, deduplicates by content hash, and stores rich metadata in SQLite. The goal is to collect **QDA files** (`.qdpx`, `.mx`, `.nvpx`, etc.) and **qualitative data** (`.txt`, `.pdf`, `.rtf`, `.docx`) from thirteen repositories across nine countries.
 
 ```mermaid
 flowchart LR
@@ -110,7 +110,7 @@ Each connector implements `BaseConnector.search(query) -> list[SearchResult]`, r
 
 | Connector | API | Pagination | Rate limit | Max results |
 |-----------|-----|------------|------------|-------------|
-| **Dataverse** (QDR, DANS, DataverseNO, Harvard, SODHA) | Dataverse Search API (`/api/search`) | 100 results/page, offset-based | None | 500 |
+| **Dataverse** (QDR, DANS, DataverseNO, Harvard, SODHA, ACSS, KU Leuven, UCLouvain, RepOD, HeiDATA, bonndata) | Dataverse Search API (`/api/search`) | 100 results/page, offset-based | None | 500 |
 | **Zenodo** | REST API (`/api/records`) | 25 results/page, page-based | 2s between requests | 200 |
 | **UK Data Service** | EPrints JSON export (`export_reshare_JSON.js`) | Single request returns all matches | 2s between requests | Unlimited |
 
@@ -302,6 +302,6 @@ After `scrape-all` completes (including retries), a summary table is printed sho
 - [`src/pipeline/config.py`](src/pipeline/config.py) — `QDA_EXTENSIONS` (12 extensions), `QUALITATIVE_EXTENSIONS` (4 extensions), `SKIP_KIND_OF_DATA` (10 types), `QUALITATIVE_KEYWORDS` (52 keywords in 7 languages), `SOURCE_DIR_NAMES`
 - [`src/pipeline/cli.py`](src/pipeline/cli.py) — `_load_queries()`, `_scrape_source()`, `_scrape_results()`, `_save_metadata_only()`
 - [`src/pipeline/connectors/base.py`](src/pipeline/connectors/base.py) — `BaseConnector` interface, `SearchResult` dataclass
-- [`src/pipeline/connectors/__init__.py`](src/pipeline/connectors/__init__.py) — Connector registry (7 sources)
+- [`src/pipeline/connectors/__init__.py`](src/pipeline/connectors/__init__.py) — Connector registry (13 sources)
 - [`src/pipeline/utils/license.py`](src/pipeline/utils/license.py) — `normalize_license()`, `is_open_license()`, `OPEN_LICENSES`
 - [`datasources.csv`](datasources.csv) — Source of truth for all evaluated data sources and their status

@@ -9,38 +9,46 @@
 
 ## Executive Summary
 
-The goal of Part 1 was to find, download, and catalog as much open qualitative research data as possible from the web — with a priority on QDA (Qualitative Data Analysis) project files. An automated pipeline was built to search seven data repositories, download files with open licenses, and store rich metadata in a SQLite database.
+The goal of Part 1 was to find, download, and catalog as much open qualitative research data as possible from the web — with a priority on QDA (Qualitative Data Analysis) project files. An automated pipeline was built to search thirteen data repositories across nine countries, download files with open licenses, and store rich metadata in a SQLite database.
 
 **Key results:**
 
 | Metric | Value | Description |
 |---|---|---|
-| Total metadata records | 40,383 | All file records in the database (downloaded + metadata-only) |
-| Files downloaded | 10,627 (16.76 GB) | Files successfully saved to disk with open licenses |
-| QDA files found | 82 (across 8 formats) | Structured analysis files (qdpx, nvp, mx20, atlproj, etc.) |
-| QDA files downloaded | 72 (7.98 GB) | QDA files accessible and saved; 10 were restricted |
-| Restricted (metadata only) | 7,209 | Files requiring access approval; metadata preserved |
-| Unique datasets | 2,464 | Distinct repository records (each may contain multiple files) |
-| Data sources implemented | 7 | Repositories with automated connectors |
+| Total metadata records | 44,196 | All file records in the database (downloaded + metadata-only) |
+| Files downloaded | 11,110 (17.11 GB) | Files successfully saved to disk with open licenses |
+| QDA files found | 83 (across 9 formats) | Structured analysis files (qdpx, nvp, mx20, atlproj, etc.) |
+| QDA files downloaded | 73 | QDA files accessible and saved; 10 were restricted |
+| Restricted (metadata only) | 7,270 | Files requiring access approval; metadata preserved |
+| Unique datasets | 2,556 | Distinct repository records (each may contain multiple files) |
+| Data sources implemented | 13 | Repositories with automated connectors |
 | Data sources evaluated | 27 | Total repositories investigated for qualitative data |
-| Qualitative relevance rate | 95.0% | Downloaded datasets with qualitative signal in metadata |
+| Qualitative relevance rate | 90.9% | Downloaded files with qualitative signal in metadata |
 | Duplicate files (by SHA-256) | 0 | No identical files across sources or queries |
 
 ---
 
 ## Data Sources Overview
 
-Seven repositories were implemented with automated connectors. A further 20 sources were evaluated and documented but skipped due to access restrictions, anti-bot protections, or lack of downloadable data.
+Thirteen repositories were implemented with automated connectors across nine countries. A further 14 sources were evaluated and documented but skipped due to access restrictions, anti-bot protections, or lack of downloadable data.
 
-| Source | API Type | Total Records | Downloaded | QDA | Size (GB) | Datasets |
-|---|---|---|---|---|---|---|
-| Harvard Dataverse | Dataverse API | 16,288 | 3,684 | 8 | 4.17 | 447 |
-| DANS (Netherlands) | Dataverse API | 10,833 | 2,614 | 19 | 6.81 | 375 |
-| QDR (Syracuse) | Dataverse API | 4,724 | 552 | 8 | 0.19 | 133 |
-| DataverseNO | Dataverse API | 3,153 | 1,099 | 1 | 2.97 | 111 |
-| Zenodo (CERN) | Custom REST API | 2,639 | 1,665 | 42 | 2.24 | 692 |
-| UK Data Service | EPrints JSON API | 2,605 | 872 | 4 | 0.24 | 705 |
-| SODHA (Belgium) | Dataverse API | 141 | 141 | 0 | 0.14 | 1 |
+| Source | API Type | Country | Total Records | Downloaded | QDA | Size (GB) | Datasets |
+|---|---|---|---|---|---|---|---|
+| Harvard Dataverse | Dataverse API | USA | 16,288 | 3,684 | 8 | 4.17 | 447 |
+| DANS | Dataverse API | Netherlands | 10,833 | 2,614 | 19 | 6.81 | 375 |
+| QDR (Syracuse) | Dataverse API | USA | 4,724 | 552 | 8 | 0.19 | 133 |
+| KU Leuven | Dataverse API | Belgium | 3,224 | 244 | 0 | 0.07 | 43 |
+| DataverseNO | Dataverse API | Norway | 3,153 | 1,099 | 1 | 2.97 | 111 |
+| Zenodo (CERN) | Custom REST API | International | 2,639 | 1,665 | 42 | 2.24 | 692 |
+| UK Data Service | EPrints JSON API | UK | 2,605 | 872 | 4 | 0.24 | 705 |
+| HeiDATA (Heidelberg) | Dataverse API | Germany | 368 | 166 | 0 | 0.09 | 27 |
+| SODHA | Dataverse API | Belgium | 141 | 141 | 0 | 0.14 | 1 |
+| bonndata (Bonn) | Dataverse API | Germany | 139 | 23 | 1 | 0.01 | 14 |
+| ACSS | Dataverse API | MENA | 82 | 50 | 0 | 0.18 | 8 |
+| RepOD | Dataverse API | Poland | 0 | 0 | 0 | 0 | 0 |
+| UCLouvain | Dataverse API | Belgium | 0 | 0 | 0 | 0 | 0 |
+
+Eleven of the thirteen Dataverse-based sources required zero new connector code — only a base URL and source name. RepOD and UCLouvain returned no qualifying results for any search query, demonstrating that not every repository contains qualitative data despite supporting the same API.
 
 ---
 
@@ -50,7 +58,7 @@ Seven repositories were implemented with automated connectors. A further 20 sour
 
 A significant portion of datasets contain files marked as **restricted** at the file level. The dataset metadata is publicly available, but individual files require access approval from the data owner. This is a per-file flag — within the same dataset, some files may be open while others are restricted.
 
-QDR has 4,084 restricted files out of 4,724 total (86.5%). The UK Data Service shows a similar pattern: 897 restricted out of 2,605 records (34.4%). Many qualitative data files — especially raw interview transcripts and QDA project files — are restricted precisely because they contain sensitive participant data. The most valuable files for our purposes are often the least accessible.
+Of 44,196 total records, 7,270 (16.4%) are restricted. QDR has 4,084 restricted files out of 4,724 total (86.5%). The UK Data Service shows a similar pattern: 897 restricted out of 2,605 records (34.4%). Many qualitative data files — especially raw interview transcripts and QDA project files — are restricted precisely because they contain sensitive participant data. The most valuable files for our purposes are often the least accessible.
 
 **Mitigation:** The pipeline detects the `restricted` flag from the API response *before* attempting a download, avoiding wasted HTTP 403 errors. Restricted files are saved as metadata-only records to preserve the information for Part 2 classification.
 
@@ -78,9 +86,9 @@ Storing HTML-laden descriptions pollutes the database and makes text search unre
 
 ### 5. Scarcity of QDA Project Files
 
-Despite targeting six repositories including one dedicated to qualitative data (QDR), actual QDA project files are extremely rare. Only 82 out of 40,242 records (0.2%) are QDA files. The vast majority of shared data consists of PDFs, Word documents, and plain text — the *raw data* rather than the structured analysis files. Researchers rarely share their analysis project files, even when they share the underlying data.
+Despite targeting thirteen repositories including one dedicated to qualitative data (QDR), actual QDA project files are extremely rare. Only 83 out of 44,196 records (0.19%) are QDA files. The vast majority of shared data consists of PDFs, Word documents, and plain text — the *raw data* rather than the structured analysis files. Researchers rarely share their analysis project files, even when they share the underlying data.
 
-**Mitigation:** QDA detection uses file extensions *plus* Dataverse-specific fields (`friendly_type` = "REFI-QDA-Project", `content_type` = "application/x-zip-refiqda") to catch QDA files with non-standard extensions. Search queries specifically target QDA software names (NVivo, ATLAS.ti, MaxQDA, Dedoose, QDAcity, QDA Miner, CAQDAS). Despite the rarity, 72 QDA files were successfully downloaded across 5 different QDA tools and 8 file formats.
+**Mitigation:** QDA detection uses file extensions *plus* Dataverse-specific fields (`friendly_type` = "REFI-QDA-Project", `content_type` = "application/x-zip-refiqda") to catch QDA files with non-standard extensions. Search queries specifically target QDA software names (NVivo, ATLAS.ti, MaxQDA, Dedoose, QDAcity, QDA Miner, CAQDAS). Despite the rarity, 73 QDA files were successfully downloaded across 6 different QDA tools and 9 file formats (qdpx, nvp, nvpx, mx, mx20, mx22, mx24, atlproj, qdc).
 
 ### 6. Inconsistent and Missing Metadata Across Repositories
 
@@ -88,15 +96,13 @@ Metadata completeness varies dramatically across sources. Core fields are near-u
 
 | Field | Coverage |
 |---|---|
-| Description | 100.0% |
-| Authors | 100.0% |
+| Description | 99.9% |
 | License | 100.0% |
-| Date published | 93.5% |
-| Keywords | 83.5% |
-| Language | 53.4% |
-| Kind of data | 33.9% |
-| Geographic coverage | 17.1% |
-| Software used | 5.0% |
+| Keywords | 84.3% |
+| Language | 50.1% |
+| Kind of data | ~34% |
+| Geographic coverage | ~17% |
+| Software used | ~5% |
 
 Different repositories also use different metadata schemas. Dataverse installations share a common API structure, but the UK Data Service (EPrints) uses entirely different field names (`data_kind` instead of `kindOfData`, `country` instead of `geographicCoverage`).
 
@@ -120,13 +126,13 @@ The UK Data Service returns dates in non-standard formats. Instead of ISO 8601 `
 
 General-purpose repositories (Harvard, Zenodo, DataverseNO) contain predominantly quantitative data. Search queries for terms like "qualitative research" return many datasets where the word "qualitative" appears in the description but the actual data is quantitative (e.g., survey statistics, gene expression data, climate measurements).
 
-**Mitigation:** A two-stage filtering approach: (1) search queries are designed to prioritize qualitative methods and QDA tools; (2) a qualitative relevance filter checks each dataset's description and keywords against a multilingual keyword set (114 terms across 7 languages) before downloading. Datasets with QDA files bypass this filter entirely. The result is a 95.0% qualitative relevance rate in downloaded data.
+**Mitigation:** A two-stage filtering approach: (1) search queries are designed to prioritize qualitative methods and QDA tools; (2) a qualitative relevance filter checks each dataset's description and keywords against a multilingual keyword set (114 terms across 7 languages) before downloading. Datasets with QDA files bypass this filter entirely. The result is a 90.9% qualitative relevance rate in downloaded data across all 13 sources, with the remaining ~9% mostly consisting of non-English datasets whose metadata uses terms outside the keyword list, or primary source documents (surveys, policy documents) that are legitimate qualitative raw material.
 
 ### 10. Duplicate Datasets Across Search Queries
 
 When running batch scrapes with 35 search queries across multiple languages (English, Dutch, Norwegian, German, Spanish, French, Portuguese), the same datasets frequently appear in results for different queries. A dataset about "qualitative interview transcripts" would match queries for "qualitative research", "interview transcript", and "transcript".
 
-**Mitigation:** Two-level deduplication: (1) during scraping, dataset URLs seen in earlier queries are skipped within each source; (2) after download, SHA-256 file hashes identify exact duplicates. The current database has zero duplicate files by hash, confirming the deduplication works effectively.
+**Mitigation:** Two-level deduplication: (1) during scraping, dataset URLs seen in earlier queries are skipped within each source; (2) after download, SHA-256 file hashes identify exact duplicates. The current database has zero duplicate files by hash across all 11,110 downloaded files, confirming the deduplication works effectively.
 
 ### 11. Anti-Bot Protections Blocking Repository Access
 

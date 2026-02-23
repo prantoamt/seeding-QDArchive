@@ -11,6 +11,12 @@ CONNECTORS: dict[str, BaseConnector] = {
     "dataverseno": DataverseConnector("https://dataverse.no", "dataverseno"),
     "harvard": DataverseConnector("https://dataverse.harvard.edu", "harvard"),
     "sodha": DataverseConnector("https://www.sodha.be", "sodha"),
+    "acss": DataverseConnector("https://dataverse.theacss.org", "acss"),
+    "kuleuven": DataverseConnector("https://rdr.kuleuven.be", "kuleuven"),
+    "uclouvain": DataverseConnector("https://dataverse.uclouvain.be", "uclouvain"),
+    "repod": DataverseConnector("https://repod.icm.edu.pl", "repod"),
+    "heidata": DataverseConnector("https://heidata.uni-heidelberg.de", "heidata"),
+    "bonndata": DataverseConnector("https://bonndata.uni-bonn.de", "bonndata"),
     "zenodo": ZenodoConnector(),
     "ukds": UKDataServiceConnector(),
 }
