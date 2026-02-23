@@ -932,6 +932,291 @@ def _format_size(size_bytes: int) -> str:
         return f"{size_bytes / (1024 * 1024):.1f} MB"
 
 
+@cli.command()
+def stats() -> None:
+    """Comprehensive data analysis — reproduces all report figures."""
+    from sqlalchemy import case, distinct, func
+
+    session = get_session()
+    try:
+        # ── 1. Executive Summary ──────────────────────────────────────
+        total = session.query(File).count()
+        downloaded = session.query(File).filter(File.local_path.isnot(None)).count()
+        qda_total = session.query(File).filter(File.is_qda_file.is_(True)).count()
+        qda_downloaded = (
+            session.query(File)
+            .filter(File.is_qda_file.is_(True), File.local_path.isnot(None))
+            .count()
+        )
+        restricted = session.query(File).filter(File.restricted.is_(True)).count()
+        unique_datasets = session.query(
+            func.count(distinct(File.source_url))
+        ).scalar()
+        total_size = (
+            session.query(func.sum(File.file_size_bytes))
+            .filter(File.local_path.isnot(None))
+            .scalar()
+        ) or 0
+        # Duplicate count: files sharing a hash with at least one other file
+        dup_hashes = (
+            session.query(File.file_hash)
+            .filter(File.file_hash.isnot(None))
+            .group_by(File.file_hash)
+            .having(func.count(File.id) > 1)
+            .count()
+        )
+        # Count QDA formats
+        qda_formats = (
+            session.query(func.count(distinct(File.file_type)))
+            .filter(File.is_qda_file.is_(True))
+            .scalar()
+        ) or 0
+
+        size_gb = total_size / (1024 ** 3)
+
+        console.print("\n[bold cyan]═══ Comprehensive Data Analysis ═══[/bold cyan]\n")
+
+        summary = Table(title="Executive Summary", show_header=False, pad_edge=False)
+        summary.add_column("Metric", style="bold", width=30)
+        summary.add_column("Value", justify="right", width=20)
+        summary.add_row("Total metadata records", f"{total:,}")
+        summary.add_row("Files downloaded", f"{downloaded:,} ({size_gb:.2f} GB)")
+        summary.add_row(
+            "QDA files found",
+            f"{qda_total} (across {qda_formats} formats)",
+        )
+        summary.add_row("QDA files downloaded", str(qda_downloaded))
+        summary.add_row(
+            "QDA files restricted",
+            str(qda_total - qda_downloaded),
+        )
+        summary.add_row("Restricted (metadata only)", f"{restricted:,}")
+        summary.add_row("Unique datasets", f"{unique_datasets:,}")
+        summary.add_row("Duplicate files (by SHA-256)", str(dup_hashes))
+        console.print(summary)
+
+        # ── 2. Per-Source Breakdown ───────────────────────────────────
+        col_total = func.count(File.id)
+        col_dl = func.sum(case((File.local_path.isnot(None), 1), else_=0))
+        col_qda = func.sum(case((File.is_qda_file.is_(True), 1), else_=0))
+        col_restricted = func.sum(case((File.restricted.is_(True), 1), else_=0))
+        col_size = func.sum(
+            case((File.local_path.isnot(None), File.file_size_bytes), else_=0)
+        )
+        col_datasets = func.count(distinct(File.source_url))
+
+        source_rows = (
+            session.query(
+                File.source_name,
+                col_total.label("total"),
+                col_dl.label("downloaded"),
+                col_qda.label("qda"),
+                col_restricted.label("restricted"),
+                col_size.label("size"),
+                col_datasets.label("datasets"),
+            )
+            .group_by(File.source_name)
+            .order_by(col_total.desc())
+            .all()
+        )
+
+        console.print()
+        src_table = Table(title="Per-Source Breakdown")
+        src_table.add_column("Source", style="bold", width=16)
+        src_table.add_column("Total", justify="right", width=8)
+        src_table.add_column("Downloaded", justify="right", width=11)
+        src_table.add_column("QDA", justify="right", width=5)
+        src_table.add_column("Restricted", justify="right", width=11)
+        src_table.add_column("Size (GB)", justify="right", width=10)
+        src_table.add_column("Datasets", justify="right", width=9)
+
+        for row in source_rows:
+            s_gb = (row.size or 0) / (1024 ** 3)
+            size_str = f"{s_gb:.2f}" if s_gb >= 0.01 else "<0.01"
+            src_table.add_row(
+                row.source_name,
+                str(row.total),
+                str(row.downloaded),
+                str(row.qda),
+                str(row.restricted),
+                size_str,
+                str(row.datasets),
+            )
+
+        console.print(src_table)
+
+        # ── 3. QDA Files by Format and Source ─────────────────────────
+        qda_by_format = (
+            session.query(File.file_type, func.count(File.id))
+            .filter(File.is_qda_file.is_(True))
+            .group_by(File.file_type)
+            .order_by(func.count(File.id).desc())
+            .all()
+        )
+        if qda_by_format:
+            console.print()
+            qda_table = Table(title="QDA Files by Format")
+            qda_table.add_column("Format", style="bold", width=12)
+            qda_table.add_column("Count", justify="right", width=8)
+            for fmt, cnt in qda_by_format:
+                qda_table.add_row(fmt or "unknown", str(cnt))
+            console.print(qda_table)
+
+        qda_by_source = (
+            session.query(File.source_name, func.count(File.id))
+            .filter(File.is_qda_file.is_(True))
+            .group_by(File.source_name)
+            .order_by(func.count(File.id).desc())
+            .all()
+        )
+        if qda_by_source:
+            console.print()
+            qda_src_table = Table(title="QDA Files by Source")
+            qda_src_table.add_column("Source", style="bold", width=16)
+            qda_src_table.add_column("Count", justify="right", width=8)
+            for src, cnt in qda_by_source:
+                qda_src_table.add_row(src, str(cnt))
+            console.print(qda_src_table)
+
+        # ── 4. File Type Distribution (downloaded files, top 15) ──────
+        ft_rows = (
+            session.query(File.file_type, func.count(File.id))
+            .filter(File.local_path.isnot(None))
+            .group_by(File.file_type)
+            .order_by(func.count(File.id).desc())
+            .limit(15)
+            .all()
+        )
+        if ft_rows:
+            console.print()
+            ft_table = Table(title="File Type Distribution (downloaded, top 15)")
+            ft_table.add_column("Extension", style="bold", width=12)
+            ft_table.add_column("Count", justify="right", width=8)
+            ft_table.add_column("% of downloads", justify="right", width=15)
+            for ext, cnt in ft_rows:
+                pct = cnt / downloaded * 100 if downloaded else 0
+                ft_table.add_row(ext or "none", str(cnt), f"{pct:.1f}%")
+            console.print(ft_table)
+
+        # ── 5. Qualitative Relevance ──────────────────────────────────
+        dl_files = (
+            session.query(File.title, File.description, File.keywords, File.kind_of_data)
+            .filter(File.local_path.isnot(None))
+            .all()
+        )
+
+        def _is_qualitative(title, description, keywords, kind_of_data):
+            text = " ".join(
+                (part or "").lower()
+                for part in (title, description, keywords, kind_of_data)
+            )
+            return any(kw in text for kw in QUALITATIVE_KEYWORDS)
+
+        qual_count = sum(1 for f in dl_files if _is_qualitative(*f))
+        qual_pct = qual_count / len(dl_files) * 100 if dl_files else 0
+
+        console.print(
+            f"\n[bold]Qualitative Relevance (downloaded files):[/bold] "
+            f"{qual_count:,}/{len(dl_files):,} ({qual_pct:.1f}%)"
+        )
+
+        # Per-source qualitative relevance
+        dl_by_source = (
+            session.query(
+                File.source_name, File.title, File.description,
+                File.keywords, File.kind_of_data,
+            )
+            .filter(File.local_path.isnot(None))
+            .all()
+        )
+        source_qual: dict[str, list[int]] = {}  # {source: [total, qual]}
+        for row in dl_by_source:
+            src = row.source_name
+            if src not in source_qual:
+                source_qual[src] = [0, 0]
+            source_qual[src][0] += 1
+            if _is_qualitative(row.title, row.description, row.keywords, row.kind_of_data):
+                source_qual[src][1] += 1
+
+        qual_table = Table(title="Qualitative Relevance by Source")
+        qual_table.add_column("Source", style="bold", width=16)
+        qual_table.add_column("Downloaded", justify="right", width=11)
+        qual_table.add_column("Qualitative", justify="right", width=12)
+        qual_table.add_column("Rate", justify="right", width=8)
+        for src in sorted(source_qual, key=lambda s: source_qual[s][0], reverse=True):
+            t, q = source_qual[src]
+            rate = q / t * 100 if t else 0
+            qual_table.add_row(src, str(t), str(q), f"{rate:.1f}%")
+        console.print()
+        console.print(qual_table)
+
+        # ── 6. Metadata Completeness ──────────────────────────────────
+        metadata_fields = [
+            ("description", File.description),
+            ("license", File.license_type),
+            ("keywords", File.keywords),
+            ("language", File.language),
+            ("kind_of_data", File.kind_of_data),
+            ("geographic_coverage", File.geographic_coverage),
+            ("software", File.software),
+        ]
+
+        console.print()
+        mc_table = Table(title="Metadata Completeness (all records)")
+        mc_table.add_column("Field", style="bold", width=22)
+        mc_table.add_column("Records with data", justify="right", width=18)
+        mc_table.add_column("Coverage", justify="right", width=10)
+        for label, col in metadata_fields:
+            filled = session.query(File).filter(col.isnot(None), col != "").count()
+            pct = filled / total * 100 if total else 0
+            mc_table.add_row(label, f"{filled:,}", f"{pct:.1f}%")
+        console.print(mc_table)
+
+        # ── 7. License Distribution (downloaded, top 10) ──────────────
+        lic_rows = (
+            session.query(File.license_type, func.count(File.id))
+            .filter(File.local_path.isnot(None), File.license_type.isnot(None))
+            .group_by(File.license_type)
+            .order_by(func.count(File.id).desc())
+            .limit(10)
+            .all()
+        )
+        if lic_rows:
+            console.print()
+            lic_table = Table(title="License Distribution (downloaded, top 10)")
+            lic_table.add_column("License", style="bold", width=40)
+            lic_table.add_column("Count", justify="right", width=8)
+            lic_table.add_column("% of downloads", justify="right", width=15)
+            for lic, cnt in lic_rows:
+                pct = cnt / downloaded * 100 if downloaded else 0
+                lic_table.add_row(lic or "none", str(cnt), f"{pct:.1f}%")
+            console.print(lic_table)
+
+        # ── 8. Language Distribution (downloaded, top 10) ─────────────
+        lang_rows = (
+            session.query(File.language, func.count(File.id))
+            .filter(File.local_path.isnot(None), File.language.isnot(None))
+            .group_by(File.language)
+            .order_by(func.count(File.id).desc())
+            .limit(10)
+            .all()
+        )
+        if lang_rows:
+            console.print()
+            lang_table = Table(title="Language Distribution (downloaded, top 10)")
+            lang_table.add_column("Language", style="bold", width=40)
+            lang_table.add_column("Count", justify="right", width=8)
+            lang_table.add_column("% of downloads", justify="right", width=15)
+            for lang, cnt in lang_rows:
+                pct = cnt / downloaded * 100 if downloaded else 0
+                lang_table.add_row(lang, str(cnt), f"{pct:.1f}%")
+            console.print(lang_table)
+
+        console.print()
+    finally:
+        session.close()
+
+
 @cli.command("list-sources")
 def list_sources() -> None:
     """List available data source connectors."""
