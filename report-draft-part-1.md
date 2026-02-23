@@ -13,18 +13,18 @@ The goal of Part 1 was to find, download, and catalog as much open qualitative r
 
 **Key results:**
 
-| Metric | Value |
-|---|---|
-| Total metadata records | 40,242 |
-| Files downloaded | 10,486 (16.62 GB) |
-| QDA files found | 82 (across 8 formats) |
-| QDA files downloaded | 72 (7.98 GB) |
-| Restricted (metadata only) | 7,209 |
-| Unique datasets | 2,463 |
-| Data sources implemented | 6 |
-| Data sources evaluated | 27 |
-| Qualitative relevance rate | 95.0% of downloaded datasets |
-| Duplicate files (by SHA-256) | 0 |
+| Metric | Value | Description |
+|---|---|---|
+| Total metadata records | 40,242 | All file records in the database (downloaded + metadata-only) |
+| Files downloaded | 10,486 (16.62 GB) | Files successfully saved to disk with open licenses |
+| QDA files found | 82 (across 8 formats) | Structured analysis files (qdpx, nvp, mx20, atlproj, etc.) |
+| QDA files downloaded | 72 (7.98 GB) | QDA files accessible and saved; 10 were restricted |
+| Restricted (metadata only) | 7,209 | Files requiring access approval; metadata preserved |
+| Unique datasets | 2,463 | Distinct repository records (each may contain multiple files) |
+| Data sources implemented | 6 | Repositories with automated connectors |
+| Data sources evaluated | 27 | Total repositories investigated for qualitative data |
+| Qualitative relevance rate | 95.0% | Downloaded datasets with qualitative signal in metadata |
+| Duplicate files (by SHA-256) | 0 | No identical files across sources or queries |
 
 ---
 
