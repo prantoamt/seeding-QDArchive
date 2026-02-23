@@ -29,7 +29,7 @@ Single table: **`files`**
 
 | Column | Type | Required | Description |
 |---|---|---|---|
-| `source_name` | VARCHAR(100) | yes | Repository connector name (e.g. `qdr`, `dans`, `dataverseno`) |
+| `source_name` | VARCHAR(100) | yes | Repository connector name (e.g. `qdr`, `dans`, `dataverseno`, `sodha`) |
 | `source_url` | TEXT | yes | URL to the dataset page on the source repository |
 | `download_url` | TEXT | yes | Direct download URL for the file |
 
@@ -117,20 +117,20 @@ Single table: **`files`**
 
 Not all sources provide the same metadata. Fields left blank indicate the source does not supply that data.
 
-| Field | QDR | DANS | DataverseNO | Harvard | Zenodo | UK Data Service |
-|---|---|---|---|---|---|---|
-| `keywords` | yes | yes | yes | yes | yes | yes |
-| `kind_of_data` | yes | no | sometimes | sometimes | yes | yes |
-| `language` | yes | yes | sometimes | yes | yes | yes |
-| `software` | yes | no | no | no | no | no |
-| `geographic_coverage` | yes | no | no | no | no | yes |
-| `depositor` | no | no | yes | no | no | yes |
-| `producer` | no | no | yes | no | yes | yes |
-| `publication` | no | no | yes | no | yes | yes |
-| `date_of_collection` | no | no | sometimes | no | no | yes |
-| `time_period_covered` | no | no | sometimes | no | no | no |
-| `uploader_name` | yes | yes | yes | yes | yes | yes |
-| `uploader_email` | yes | rarely | rarely | rarely | no | sometimes |
+| Field | QDR | DANS | DataverseNO | Harvard | SODHA | Zenodo | UK Data Service |
+|---|---|---|---|---|---|---|---|
+| `keywords` | yes | yes | yes | yes | yes | yes | yes |
+| `kind_of_data` | yes | no | sometimes | sometimes | sometimes | yes | yes |
+| `language` | yes | yes | sometimes | yes | yes | yes | yes |
+| `software` | yes | no | no | no | no | no | no |
+| `geographic_coverage` | yes | no | no | no | sometimes | no | yes |
+| `depositor` | no | no | yes | no | no | no | yes |
+| `producer` | no | no | yes | no | no | yes | yes |
+| `publication` | no | no | yes | no | no | yes | yes |
+| `date_of_collection` | no | no | sometimes | no | sometimes | no | yes |
+| `time_period_covered` | no | no | sometimes | no | no | no | no |
+| `uploader_name` | yes | yes | yes | yes | yes | yes | yes |
+| `uploader_email` | yes | rarely | rarely | rarely | rarely | no | sometimes |
 
 ---
 

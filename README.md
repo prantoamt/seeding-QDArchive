@@ -62,7 +62,7 @@ pdm run pipeline scrape-all
 
 ### Scrape a single source
 
-Available sources: `qdr`, `dans`, `dataverseno`, `harvard`, `zenodo`, `ukds`
+Available sources: `qdr`, `dans`, `dataverseno`, `harvard`, `sodha`, `zenodo`, `ukds`
 
 ```bash
 # Scrape QDR with all queries from queries.txt

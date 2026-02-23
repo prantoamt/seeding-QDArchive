@@ -121,6 +121,7 @@ SOURCE_DIR_NAMES: dict[str, str] = {
     "harvard": "harvard",
     "zenodo": "zenodo",
     "ukds": "uk-data-service",
+    "sodha": "sodha",
 }
 
 

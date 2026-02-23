@@ -21,7 +21,7 @@ The goal of Part 1 was to find, download, and catalog as much open qualitative r
 | QDA files downloaded | 72 (7.98 GB) | QDA files accessible and saved; 10 were restricted |
 | Restricted (metadata only) | 7,209 | Files requiring access approval; metadata preserved |
 | Unique datasets | 2,463 | Distinct repository records (each may contain multiple files) |
-| Data sources implemented | 6 | Repositories with automated connectors |
+| Data sources implemented | 7 | Repositories with automated connectors |
 | Data sources evaluated | 27 | Total repositories investigated for qualitative data |
 | Qualitative relevance rate | 95.0% | Downloaded datasets with qualitative signal in metadata |
 | Duplicate files (by SHA-256) | 0 | No identical files across sources or queries |
@@ -30,7 +30,7 @@ The goal of Part 1 was to find, download, and catalog as much open qualitative r
 
 ## Data Sources Overview
 
-Six repositories were implemented with automated connectors. A further 21 sources were evaluated and documented but skipped due to access restrictions, anti-bot protections, or lack of downloadable data.
+Seven repositories were implemented with automated connectors. A further 20 sources were evaluated and documented but skipped due to access restrictions, anti-bot protections, or lack of downloadable data.
 
 | Source | API Type | Total Records | Downloaded | QDA | Size (GB) | Datasets |
 |---|---|---|---|---|---|---|
@@ -40,6 +40,7 @@ Six repositories were implemented with automated connectors. A further 21 source
 | DataverseNO | Dataverse API | 3,153 | 1,099 | 1 | 2.97 | 111 |
 | Zenodo (CERN) | Custom REST API | 2,639 | 1,665 | 42 | 2.24 | 692 |
 | UK Data Service | EPrints JSON API | 2,605 | 872 | 4 | 0.24 | 705 |
+| SODHA (Belgium) | Dataverse API | 170 | — | — | — | 170 |
 
 ---
 
