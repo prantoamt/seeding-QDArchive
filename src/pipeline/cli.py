@@ -1,6 +1,7 @@
 """CLI entry point for the pipeline."""
 
 import logging
+import os
 from datetime import datetime
 from pathlib import Path
 
@@ -47,6 +48,15 @@ def _get_connector(source: str):
         console.print(f"[red]Unknown source '{source}'. Available: {available}[/red]")
         raise SystemExit(1)
     return connector
+
+
+def _fsync_file(path: Path) -> None:
+    """Force-flush a file to disk to prevent SMB write-buffer losses."""
+    fd = os.open(str(path), os.O_RDONLY)
+    try:
+        os.fsync(fd)
+    finally:
+        os.close(fd)
 
 
 def _save_metadata_only(
@@ -298,6 +308,9 @@ def _scrape_results(connector, source, results, session):
             except Exception as e:
                 console.print(f"  [red]Download failed for {fname}: {e}[/red]")
                 continue
+
+            # Force-flush to disk (prevents SMB write-buffer losses)
+            _fsync_file(Path(local_path))
 
             file_hash = compute_sha256(Path(local_path))
 
