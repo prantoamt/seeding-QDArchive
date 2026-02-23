@@ -135,6 +135,7 @@ SOURCE_DIR_NAMES: dict[str, str] = {
     "uva": "uva",
     "nycu": "nycu",
     "pucp": "pucp",
+    "dryad": "dryad",
 }
 
 

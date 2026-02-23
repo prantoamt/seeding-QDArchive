@@ -2,6 +2,7 @@
 
 from pipeline.connectors.base import BaseConnector, SearchResult
 from pipeline.connectors.dataverse import DataverseConnector
+from pipeline.connectors.dryad import DryadConnector
 from pipeline.connectors.ukds import UKDataServiceConnector
 from pipeline.connectors.zenodo import ZenodoConnector
 
@@ -26,9 +27,10 @@ CONNECTORS: dict[str, BaseConnector] = {
     "pucp": DataverseConnector("https://datos.pucp.edu.pe", "pucp"),
     "zenodo": ZenodoConnector(),
     "ukds": UKDataServiceConnector(),
+    "dryad": DryadConnector(),
 }
 
 __all__ = [
-    "CONNECTORS", "BaseConnector", "DataverseConnector",
+    "CONNECTORS", "BaseConnector", "DataverseConnector", "DryadConnector",
     "SearchResult", "UKDataServiceConnector", "ZenodoConnector",
 ]

@@ -34,12 +34,24 @@ def get_storage_path(
 
     When *title* is given, the directory is ``{slugify(title)}-{record_id}``.
     Falls back to plain ``{record_id}`` when title is None or empty.
+
+    If the target path already exists on disk, a numeric suffix is appended
+    to avoid overwriting (e.g., ``results_table_2.txt``).
     """
     slug = slugify(title) if title else ""
     dir_name = f"{slug}-{record_id}" if slug else record_id
     path = DATA_DIR / source_name / dir_name
     path.mkdir(parents=True, exist_ok=True)
-    return path / filename
+
+    target = path / filename
+    if target.exists():
+        stem = Path(filename).stem
+        suffix = Path(filename).suffix
+        counter = 2
+        while target.exists():
+            target = path / f"{stem}_{counter}{suffix}"
+            counter += 1
+    return target
 
 
 def compute_sha256(file_path: Path) -> str:
