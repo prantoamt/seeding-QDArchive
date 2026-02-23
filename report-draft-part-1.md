@@ -9,18 +9,18 @@
 
 ## Executive Summary
 
-The goal of Part 1 was to find, download, and catalog as much open qualitative research data as possible from the web — with a priority on QDA (Qualitative Data Analysis) project files. An automated pipeline was built to search six data repositories, download files with open licenses, and store rich metadata in a SQLite database.
+The goal of Part 1 was to find, download, and catalog as much open qualitative research data as possible from the web — with a priority on QDA (Qualitative Data Analysis) project files. An automated pipeline was built to search seven data repositories, download files with open licenses, and store rich metadata in a SQLite database.
 
 **Key results:**
 
 | Metric | Value | Description |
 |---|---|---|
-| Total metadata records | 40,242 | All file records in the database (downloaded + metadata-only) |
-| Files downloaded | 10,486 (16.62 GB) | Files successfully saved to disk with open licenses |
+| Total metadata records | 40,383 | All file records in the database (downloaded + metadata-only) |
+| Files downloaded | 10,627 (16.76 GB) | Files successfully saved to disk with open licenses |
 | QDA files found | 82 (across 8 formats) | Structured analysis files (qdpx, nvp, mx20, atlproj, etc.) |
 | QDA files downloaded | 72 (7.98 GB) | QDA files accessible and saved; 10 were restricted |
 | Restricted (metadata only) | 7,209 | Files requiring access approval; metadata preserved |
-| Unique datasets | 2,463 | Distinct repository records (each may contain multiple files) |
+| Unique datasets | 2,464 | Distinct repository records (each may contain multiple files) |
 | Data sources implemented | 7 | Repositories with automated connectors |
 | Data sources evaluated | 27 | Total repositories investigated for qualitative data |
 | Qualitative relevance rate | 95.0% | Downloaded datasets with qualitative signal in metadata |
@@ -40,7 +40,7 @@ Seven repositories were implemented with automated connectors. A further 20 sour
 | DataverseNO | Dataverse API | 3,153 | 1,099 | 1 | 2.97 | 111 |
 | Zenodo (CERN) | Custom REST API | 2,639 | 1,665 | 42 | 2.24 | 692 |
 | UK Data Service | EPrints JSON API | 2,605 | 872 | 4 | 0.24 | 705 |
-| SODHA (Belgium) | Dataverse API | 170 | — | — | — | 170 |
+| SODHA (Belgium) | Dataverse API | 141 | 141 | 0 | 0.14 | 1 |
 
 ---
 
