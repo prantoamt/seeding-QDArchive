@@ -101,7 +101,7 @@ class UKDataServiceConnector(BaseConnector):
                 _format_creator(c) for c in creators if _format_creator(c)
             )
 
-            keywords = item.get("keywords", []) or []
+            keywords = [str(kw) for kw in (item.get("keywords", []) or [])]
 
             result = SearchResult(
                 source_name="ukds",
@@ -148,8 +148,8 @@ class UKDataServiceConnector(BaseConnector):
             _format_creator(c) for c in creators if _format_creator(c)
         )
 
-        # Keywords
-        keywords = data.get("keywords", []) or []
+        # Keywords — coerce to str; EPrints sometimes returns ints
+        keywords = [str(kw) for kw in (data.get("keywords", []) or [])]
 
         # Language
         language = data.get("language", []) or []
