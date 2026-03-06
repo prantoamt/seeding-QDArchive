@@ -16,7 +16,7 @@
 
 ## 1. Overview
 
-The pipeline searches open qualitative data repositories, applies a multi-stage filter cascade to identify relevant datasets, downloads qualifying files, deduplicates by content hash, and stores rich metadata in SQLite. The goal is to collect **QDA files** (`.qdpx`, `.mx`, `.nvpx`, etc.) and **qualitative data** (`.txt`, `.pdf`, `.rtf`, `.docx`) from thirteen repositories across nine countries.
+The pipeline searches open qualitative data repositories, applies a multi-stage filter cascade to identify relevant datasets, downloads qualifying files, deduplicates by content hash, and stores rich metadata in SQLite. The goal is to collect **QDA files** (`.qdpx`, `.mx`, `.nvpx`, `.hpr7`, etc.) and **qualitative data** (`.txt`, `.pdf`, `.rtf`, `.docx`, `.csv`, `.tsv`, `.xlsx`, etc.) from thirteen repositories across nine countries.
 
 ```mermaid
 flowchart LR
@@ -70,7 +70,7 @@ The default query file uses a two-pass strategy to maximize recall while keeping
 | Query | Rationale |
 |-------|-----------|
 | `qdpx`, `REFI-QDA` | The REFI-QDA standard interchange format. Any dataset mentioning these almost certainly contains a QDA project file. |
-| `NVivo`, `ATLAS.ti`, `MaxQDA`, `Dedoose`, `QDAcity`, `QDA Miner`, `QualCoder` | The major CAQDAS (Computer-Assisted Qualitative Data Analysis Software) tools. Researchers cite the software they used in dataset descriptions, making these high-precision search terms. |
+| `NVivo`, `ATLAS.ti`, `MaxQDA`, `Dedoose`, `QDAcity`, `QDA Miner`, `QualCoder`, `Transana`, `f4analyse` | The major CAQDAS (Computer-Assisted Qualitative Data Analysis Software) tools. Researchers cite the software they used in dataset descriptions, making these high-precision search terms. |
 | `CAQDAS` | The umbrella acronym for the software category itself. |
 | `coded transcript` | A transcript that has undergone qualitative coding — strong signal that QDA was performed on the data. |
 
@@ -208,7 +208,7 @@ The term `interview` is intentionally broad: in research data repositories, the 
 | French | `qualitatif`, `entretien`, `groupe de discussion` | Zenodo hosts French-language social science data |
 | Portuguese | `pesquisa qualitativa`, `entrevista qualitativa`, `grupo focal`, `análise temática` | Zenodo hosts Portuguese-language social science data |
 
-**Design trade-off: recall over precision.** The keyword list intentionally favors false positives over false negatives. A dataset that incorrectly passes Gate 3 still faces Gate 4 (file-type filtering), which only downloads QDA and qualitative file formats (`.qdpx`, `.pdf`, `.txt`, `.rtf`, `.docx`). The combination of Gates 3 and 4 together provides sufficient precision — Gate 3 eliminates clearly non-qualitative datasets (e.g., astronomical observations, genomic data), while Gate 4 prevents downloading irrelevant file types (e.g., `.csv`, `.zip`, `.nc`) from borderline datasets.
+**Design trade-off: recall over precision.** The keyword list intentionally favors false positives over false negatives. A dataset that incorrectly passes Gate 3 still faces Gate 4 (file-type filtering), which only downloads QDA and qualitative file formats (`.qdpx`, `.pdf`, `.txt`, `.csv`, `.xlsx`, etc.). The combination of Gates 3 and 4 together provides sufficient precision — Gate 3 eliminates clearly non-qualitative datasets (e.g., astronomical observations, genomic data), while Gate 4 prevents downloading irrelevant file types (e.g., `.zip`, `.nc`, `.fits`) from borderline datasets.
 
 ### Gate 4 — File Type
 
@@ -216,8 +216,8 @@ Applied per-file within a qualifying dataset:
 
 | Category | Extensions | Action |
 |----------|-----------|--------|
-| **QDA files** | `.qdpx`, `.qde`, `.mx`, `.mx18`, `.mx20`, `.mx22`, `.mx24`, `.nvp`, `.nvpx`, `.atlproj`, `.ddx`, `.qda` | Download |
-| **Qualitative data** | `.txt`, `.pdf`, `.rtf`, `.docx` | Download |
+| **QDA files** | `.qdpx`, `.qde`, `.qdc`, `.mqda`, `.mx`, `.mx24`, `.mx24bac`, `.mc24`, `.mex24`, `.mx22`, `.mex22`, `.mx20`, `.mx18`, `.mx12`, `.mx11`, `.mx5`, `.mx4`, `.mx3`, `.mx2`, `.m2k`, `.mqbac`, `.mqtc`, `.mqex`, `.mqmtr`, `.loa`, `.sea`, `.mtr`, `.mod`, `.nvp`, `.nvpx`, `.atlproj`, `.atlasproj`, `.hpr7`, `.ddx`, `.qda`, `.qpd`, `.ppj`, `.pprj`, `.qlt`, `.f4p` | Download |
+| **Qualitative data** | `.txt`, `.pdf`, `.rtf`, `.docx`, `.csv`, `.tsv`, `.xlsx`, `.xls`, `.ods` | Download |
 | **Everything else** | Any other extension | Save as metadata-only record (`notes="irrelevant file type"`) |
 
 ## 7. Download & Deduplication
@@ -299,7 +299,7 @@ After `scrape-all` completes (including retries), a summary table is printed sho
 
 ## 10. Reference
 
-- [`src/pipeline/config.py`](src/pipeline/config.py) — `QDA_EXTENSIONS` (12 extensions), `QUALITATIVE_EXTENSIONS` (4 extensions), `SKIP_KIND_OF_DATA` (10 types), `QUALITATIVE_KEYWORDS` (52 keywords in 7 languages), `SOURCE_DIR_NAMES`
+- [`src/pipeline/config.py`](src/pipeline/config.py) — `QDA_EXTENSIONS` (40 extensions), `QUALITATIVE_EXTENSIONS` (9 extensions), `SKIP_KIND_OF_DATA` (10 types), `QUALITATIVE_KEYWORDS` (52 keywords in 7 languages), `SOURCE_DIR_NAMES`
 - [`src/pipeline/cli.py`](src/pipeline/cli.py) — `_load_queries()`, `_scrape_source()`, `_scrape_results()`, `_save_metadata_only()`
 - [`src/pipeline/connectors/base.py`](src/pipeline/connectors/base.py) — `BaseConnector` interface, `SearchResult` dataclass
 - [`src/pipeline/connectors/__init__.py`](src/pipeline/connectors/__init__.py) — Connector registry (13 sources)

@@ -8,6 +8,8 @@ MaxQDA
 Dedoose
 QDAcity
 QDA Miner
+Transana
+f4analyse
 CAQDAS
 coded transcript
 

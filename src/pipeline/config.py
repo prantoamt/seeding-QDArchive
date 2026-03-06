@@ -13,21 +13,57 @@ DB_URL = f"sqlite:///{DB_PATH}"
 
 # Known QDA file extensions (from QDA File Extensions Formats overview)
 QDA_EXTENSIONS = {
-    ".qdpx",    # REFI-QDA / QDAcity
-    ".qde",     # REFI-QDA exchange
-    ".mx",      # MAXQDA
-    ".mx18",    # MAXQDA 2018
-    ".mx20",    # MAXQDA 2020
-    ".mx22",    # MAXQDA 2022
-    ".mx24",    # MAXQDA 2024
-    ".nvp",     # NVivo (older)
-    ".nvpx",    # NVivo
-    ".atlproj", # ATLAS.ti
-    ".ddx",     # Dedoose
-    ".qda",     # QDA Miner
+    # REFI-QDA
+    ".qdpx",      # REFI-QDA project / QDAcity
+    ".qde",       # REFI-QDA exchange
+    ".qdc",       # REFI-QDA codebook
+    # MAXQDA — current & legacy
+    ".mx",        # MAXQDA (generic)
+    ".mqda",      # MAXQDA project
+    ".mx24",      # MAXQDA 2024
+    ".mx24bac",   # MAXQDA 2024 backup
+    ".mc24",      # MAXQDA 2024 codebook
+    ".mex24",     # MAXQDA 2024 exchange
+    ".mx22",      # MAXQDA 2022
+    ".mex22",     # MAXQDA 2022 exchange
+    ".mx20",      # MAXQDA 2020
+    ".mx18",      # MAXQDA 2018
+    ".mx12",      # MAXQDA 12
+    ".mx11",      # MAXQDA 11
+    ".mx5",       # MAXQDA 10/5
+    ".mx4",       # MAXQDA 4
+    ".mx3",       # MAXQDA 3
+    ".mx2",       # MAXQDA 2
+    ".m2k",       # MAXQDA 2000
+    ".mqbac",     # MAXQDA backup
+    ".mqtc",      # MAXQDA teamwork
+    ".mqex",      # MAXQDA exchange
+    ".mqmtr",     # MAXQDA memo transfer
+    ".loa",       # MAXQDA auxiliary
+    ".sea",       # MAXQDA auxiliary
+    ".mtr",       # MAXQDA auxiliary
+    ".mod",       # MAXQDA auxiliary
+    # NVivo
+    ".nvp",       # NVivo (older)
+    ".nvpx",      # NVivo
+    # ATLAS.ti
+    ".atlproj",   # ATLAS.ti (current)
+    ".atlasproj", # ATLAS.ti (variant)
+    ".hpr7",      # ATLAS.ti 7 hermeneutic unit
+    # Dedoose
+    ".ddx",       # Dedoose
+    # QDA Miner
+    ".qda",       # QDA Miner
+    ".qpd",       # QDA Miner project
+    # Transana
+    ".ppj",       # Transana project
+    ".pprj",      # Transana project
+    ".qlt",       # Transana
+    # f4analyse
+    ".f4p",       # f4analyse project
 }
 
-QUALITATIVE_EXTENSIONS = {".txt", ".pdf", ".rtf", ".docx"}
+QUALITATIVE_EXTENSIONS = {".txt", ".pdf", ".rtf", ".docx", ".csv", ".tsv", ".xlsx", ".xls", ".ods"}
 
 # kind_of_data values that are NOT qualitative research data.
 # Records with these types are saved as metadata-only (no download).
