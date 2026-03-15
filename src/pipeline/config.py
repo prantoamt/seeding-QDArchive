@@ -63,24 +63,6 @@ QDA_EXTENSIONS = {
     ".f4p",       # f4analyse project
 }
 
-QUALITATIVE_EXTENSIONS = {".txt", ".pdf", ".rtf", ".docx", ".csv", ".tsv", ".xlsx", ".xls", ".ods"}
-
-# kind_of_data values that are NOT qualitative research data.
-# Records with these types are saved as metadata-only (no download).
-# Source: Zenodo resource_type.type values; Dataverse kindOfData is free-text.
-SKIP_KIND_OF_DATA = {
-    "publication",
-    "presentation",
-    "poster",
-    "lesson",
-    "software",
-    "workflow",
-    "image",
-    "video",
-    "event",
-    "model",
-}
-
 # Keywords that signal qualitative relevance in a dataset description.
 # Checked case-insensitively; includes common non-English equivalents.
 QUALITATIVE_KEYWORDS = {
@@ -149,6 +131,130 @@ QUALITATIVE_KEYWORDS = {
     "análise temática",
 }
 
+# Repository IDs — course-defined (1–20), our additional sources (101+)
+REPOSITORY_IDS: dict[str, int] = {
+    # Course-defined
+    "zenodo": 1,
+    "dryad": 2,
+    "ukds": 3,
+    "qdr": 4,
+    "dans": 5,
+    "dataverseno": 6,
+    "harvard": 10,
+    # Our additional sources
+    "sodha": 101,
+    "acss": 102,
+    "kuleuven": 103,
+    "uclouvain": 104,
+    "repod": 105,
+    "heidata": 106,
+    "bonndata": 107,
+    "dataverselv": 108,
+    "crossda": 109,
+    "darus": 110,
+    "rsu": 111,
+    "nycu": 113,
+    "pucp": 114,
+}
+
+# Repository base URLs — maps source key to top-level repository URL
+REPOSITORY_URLS: dict[str, str] = {
+    "zenodo": "https://zenodo.org",
+    "dryad": "https://datadryad.org",
+    "ukds": "https://reshare.ukdataservice.ac.uk",
+    "qdr": "https://data.qdr.syr.edu",
+    "dans": "https://ssh.datastations.nl",
+    "dataverseno": "https://dataverse.no",
+    "harvard": "https://dataverse.harvard.edu",
+    "sodha": "https://www.sodha.be",
+    "acss": "https://dataverse.theacss.org",
+    "kuleuven": "https://rdr.kuleuven.be",
+    "uclouvain": "https://dataverse.uclouvain.be",
+    "repod": "https://repod.icm.edu.pl",
+    "heidata": "https://heidata.uni-heidelberg.de",
+    "bonndata": "https://bonndata.uni-bonn.de",
+    "dataverselv": "https://dv.dataverse.lv",
+    "crossda": "https://data.crossda.hr",
+    "darus": "https://darus.uni-stuttgart.de",
+    "rsu": "https://dataverse.rsu.lv",
+    "nycu": "https://dataverse.lib.nycu.edu.tw",
+    "pucp": "https://datos.pucp.edu.pe",
+}
+
+# ISO 639-1 language code mapping (free-text → 2-letter code)
+LANGUAGE_MAP: dict[str, str] = {
+    "english": "en",
+    "german": "de",
+    "french": "fr",
+    "dutch": "nl",
+    "norwegian": "no",
+    "spanish": "es",
+    "portuguese": "pt",
+    "italian": "it",
+    "swedish": "sv",
+    "danish": "da",
+    "finnish": "fi",
+    "polish": "pl",
+    "czech": "cs",
+    "croatian": "hr",
+    "hungarian": "hu",
+    "romanian": "ro",
+    "turkish": "tr",
+    "arabic": "ar",
+    "chinese": "zh",
+    "japanese": "ja",
+    "korean": "ko",
+    "russian": "ru",
+    "greek": "el",
+    "latvian": "lv",
+    "lithuanian": "lt",
+    "estonian": "et",
+    "slovenian": "sl",
+    "slovak": "sk",
+    "bulgarian": "bg",
+    "serbian": "sr",
+    "bosnian": "bs",
+    "catalan": "ca",
+    "basque": "eu",
+    "galician": "gl",
+    "welsh": "cy",
+    "irish": "ga",
+    "afrikaans": "af",
+    "hindi": "hi",
+    "urdu": "ur",
+    "thai": "th",
+    "vietnamese": "vi",
+    "indonesian": "id",
+    "malay": "ms",
+    "swahili": "sw",
+    "hebrew": "he",
+    "persian": "fa",
+    "ukrainian": "uk",
+    "tamil": "ta",
+    "bengali": "bn",
+    "tagalog": "tl",
+}
+
+
+def normalize_language(raw: str) -> str | None:
+    """Convert a free-text language string to ISO 639-1.
+
+    Returns the 2-letter code if recognized, or the original string lowered
+    if it already looks like a code (2-3 chars). Returns None for empty input.
+    """
+    if not raw or not raw.strip():
+        return None
+    cleaned = raw.strip().lower()
+    # Already a code (e.g., "en", "eng", "en-US")
+    if len(cleaned) <= 3:
+        return cleaned[:2]
+    # BCP 47 with region (e.g., "en-US")
+    if "-" in cleaned and len(cleaned) <= 6:
+        return cleaned.split("-")[0]
+    # Look up in mapping
+    return LANGUAGE_MAP.get(cleaned, cleaned)
+
+
 # Human-readable directory names for each source (used in data/ folder)
 SOURCE_DIR_NAMES: dict[str, str] = {
     "qdr": "qdr",
@@ -168,7 +274,6 @@ SOURCE_DIR_NAMES: dict[str, str] = {
     "crossda": "crossda",
     "darus": "darus",
     "rsu": "rsu",
-    "uva": "uva",
     "nycu": "nycu",
     "pucp": "pucp",
     "dryad": "dryad",

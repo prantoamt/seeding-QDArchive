@@ -82,7 +82,7 @@ class UKDataServiceConnector(BaseConnector):
 
         results: list[SearchResult] = []
         for item in data:
-            eprint_id = item.get("eprintid", "")
+            eprint_id = str(item.get("eprintid", ""))
 
             # Client-side file_type filtering
             if file_type:
@@ -97,9 +97,11 @@ class UKDataServiceConnector(BaseConnector):
                     continue
 
             creators = item.get("creators", [])
-            author_names = "; ".join(
-                _format_creator(c) for c in creators if _format_creator(c)
-            )
+            persons = [
+                {"name": _format_creator(c), "role": "AUTHOR"}
+                for c in creators
+                if _format_creator(c)
+            ]
 
             keywords = [str(kw) for kw in (item.get("keywords", []) or [])]
 
@@ -108,7 +110,8 @@ class UKDataServiceConnector(BaseConnector):
                 source_url=f"{BASE_URL}/{eprint_id}/",
                 title=item.get("title", ""),
                 description=_strip_html(item.get("abstract", "")),
-                authors=author_names,
+                persons=persons,
+                project_id_on_source=eprint_id,
                 date_published=_normalize_date(item.get("date", "")),
                 keywords=keywords,
                 tags=keywords,
@@ -143,10 +146,13 @@ class UKDataServiceConnector(BaseConnector):
         title = data.get("title", "")
         description = _strip_html(data.get("abstract", ""))
 
+        # Persons
         creators = data.get("creators", []) or []
-        author_names = "; ".join(
-            _format_creator(c) for c in creators if _format_creator(c)
-        )
+        persons = [
+            {"name": _format_creator(c), "role": "AUTHOR"}
+            for c in creators
+            if _format_creator(c)
+        ]
 
         # Keywords — coerce to str; EPrints sometimes returns ints
         keywords = [str(kw) for kw in (data.get("keywords", []) or [])]
@@ -168,16 +174,11 @@ class UKDataServiceConnector(BaseConnector):
         producers = data.get("award_funders", []) or []
 
         # DOI → publication
-        doi = data.get("doi", "")
-        publications = [f"https://doi.org/{doi}"] if doi else []
+        doi_val = data.get("doi", "")
+        doi = f"https://doi.org/{doi_val}" if doi_val else ""
+        publications = [doi] if doi else []
 
-        # Uploader / contact
-        uploader_name = ""
-        uploader_email = ""
-        if creators:
-            uploader_name = _format_creator(creators[0])
-            uploader_email = creators[0].get("id", "") or ""
-
+        # Depositor / contact
         depositor = ""
         contacts = data.get("contact_details", []) or []
         if contacts:
@@ -213,7 +214,9 @@ class UKDataServiceConnector(BaseConnector):
             source_url=record_url,
             title=title,
             description=description,
-            authors=author_names,
+            persons=persons,
+            project_id_on_source=eprint_id,
+            doi=doi,
             license_type=license_type,
             license_url=license_url,
             date_published=_normalize_date(data.get("date", "")),
@@ -228,8 +231,6 @@ class UKDataServiceConnector(BaseConnector):
             publication=publications,
             date_of_collection=date_of_collection,
             time_period_covered="",
-            uploader_name=uploader_name,
-            uploader_email=uploader_email,
             files=files,
         )
 
@@ -285,8 +286,6 @@ def _build_file_list(eprint_id: int | str, documents: list) -> list[dict]:
         is_open = _is_open_license(license_str)
 
         # Extract document ID from URI for reliable download URLs.
-        # The `placement` field does NOT match the URL path number;
-        # the document URI (/id/document/{doc_id}) redirects correctly.
         doc_id = _extract_doc_id(doc.get("uri", ""))
 
         for f in doc.get("files", []):

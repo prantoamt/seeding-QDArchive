@@ -70,21 +70,33 @@ class DataverseConnector(BaseConnector):
                 break
 
             for item in items:
+                # Extract global_id for persistent ID and project_id_on_source
+                global_id = item.get("global_id", "")
+                source_url = item.get("url", "")
+                if global_id:
+                    source_url = (
+                        f"{self._base_url}/dataset.xhtml?persistentId={global_id}"
+                    )
+
+                persons = [
+                    {"name": name, "role": "AUTHOR"}
+                    for name in item.get("authors", [])
+                    if name
+                ]
+
+                # Extract a usable project ID from global_id or URL
+                project_id = _extract_project_id(global_id or source_url)
+
                 result = SearchResult(
                     source_name=self._instance_name,
-                    source_url=item.get("url", ""),
+                    source_url=source_url,
                     title=item.get("name", ""),
                     description=item.get("description", ""),
-                    authors="; ".join(item.get("authors", [])),
+                    persons=persons,
+                    project_id_on_source=project_id,
                     date_published=item.get("published_at", ""),
                     tags=item.get("subjects", []),
                 )
-                # Extract global_id for later metadata fetch
-                global_id = item.get("global_id", "")
-                if global_id:
-                    result.source_url = (
-                        f"{self._base_url}/dataset.xhtml?persistentId={global_id}"
-                    )
                 results.append(result)
 
             total_count = data.get("total_count", 0)
@@ -143,13 +155,24 @@ class DataverseConnector(BaseConnector):
             raw = description_list[0].get("dsDescriptionValue", {}).get("value", "")
             description = _strip_html(raw)
 
+        # Persons — authors with role AUTHOR
         authors_list = _get_field_value(fields, "author", [])
-        author_names = []
+        persons = []
         if isinstance(authors_list, list):
             for a in authors_list:
                 name = a.get("authorName", {}).get("value", "")
                 if name:
-                    author_names.append(name)
+                    persons.append({"name": name, "role": "AUTHOR"})
+
+        # Contributors with role CONTRIBUTOR
+        contrib_list = _get_field_value(fields, "contributor", [])
+        if isinstance(contrib_list, list):
+            for c in contrib_list:
+                name = c.get("contributorName", {}).get("value", "")
+                if name:
+                    ctype = c.get("contributorType", {}).get("value", "")
+                    role = "EDITOR" if "editor" in ctype.lower() else "CONTRIBUTOR"
+                    persons.append({"name": name, "role": role})
 
         subject_list = _get_field_value(fields, "subject", [])
 
@@ -186,7 +209,7 @@ class DataverseConnector(BaseConnector):
                 if country:
                     geo_coverage.append(country)
 
-        # Provenance fields (mainly DataverseNO)
+        # Provenance fields
         depositor = _get_field_value(fields, "depositor", "")
         if not isinstance(depositor, str):
             depositor = ""
@@ -212,26 +235,24 @@ class DataverseConnector(BaseConnector):
         collection_list = _get_field_value(fields, "dateOfCollection", [])
         date_of_collection = ""
         if isinstance(collection_list, list) and collection_list:
-            start = collection_list[0].get("dateOfCollectionStart", {}).get("value", "")
-            end = collection_list[0].get("dateOfCollectionEnd", {}).get("value", "")
-            if start or end:
-                date_of_collection = f"{start} to {end}" if start and end else (start or end)
+            coll_start = collection_list[0].get("dateOfCollectionStart", {}).get("value", "")
+            coll_end = collection_list[0].get("dateOfCollectionEnd", {}).get("value", "")
+            if coll_start or coll_end:
+                date_of_collection = (
+                    f"{coll_start} to {coll_end}" if coll_start and coll_end
+                    else (coll_start or coll_end)
+                )
 
         tp_list = _get_field_value(fields, "timePeriodCovered", [])
         time_period_covered = ""
         if isinstance(tp_list, list) and tp_list:
-            start = tp_list[0].get("timePeriodCoveredStart", {}).get("value", "")
-            end = tp_list[0].get("timePeriodCoveredEnd", {}).get("value", "")
-            if start or end:
-                time_period_covered = f"{start} to {end}" if start and end else (start or end)
-
-        # Contact / uploader info
-        contact_list = _get_field_value(fields, "datasetContact", [])
-        uploader_name = ""
-        uploader_email = ""
-        if isinstance(contact_list, list) and contact_list:
-            uploader_name = contact_list[0].get("datasetContactName", {}).get("value", "")
-            uploader_email = contact_list[0].get("datasetContactEmail", {}).get("value", "")
+            tp_start = tp_list[0].get("timePeriodCoveredStart", {}).get("value", "")
+            tp_end = tp_list[0].get("timePeriodCoveredEnd", {}).get("value", "")
+            if tp_start or tp_end:
+                time_period_covered = (
+                    f"{tp_start} to {tp_end}" if tp_start and tp_end
+                    else (tp_start or tp_end)
+                )
 
         # License info
         license_info = version.get("license", {})
@@ -240,6 +261,22 @@ class DataverseConnector(BaseConnector):
         terms = version.get("termsOfAccess", "")
         if not license_name and terms:
             license_name = terms
+
+        # DOI
+        doi_str = persistent_id or ""
+        if doi_str.startswith("doi:"):
+            doi = f"https://doi.org/{doi_str[4:]}"
+        elif doi_str.startswith("hdl:"):
+            doi = f"https://hdl.handle.net/{doi_str[4:]}"
+        else:
+            doi = ""
+
+        # Version number
+        ver_num = version.get("versionNumber")
+        version_number = str(ver_num) if ver_num else ""
+
+        # Project ID on source
+        project_id = _extract_project_id(persistent_id or record_url)
 
         # Files
         files = []
@@ -265,7 +302,10 @@ class DataverseConnector(BaseConnector):
             source_url=record_url,
             title=title,
             description=description,
-            authors="; ".join(author_names),
+            persons=persons,
+            project_id_on_source=project_id,
+            doi=doi,
+            version=version_number,
             license_type=license_name,
             license_url=license_uri,
             date_published=version.get("releaseTime", ""),
@@ -280,8 +320,6 @@ class DataverseConnector(BaseConnector):
             publication=publications,
             date_of_collection=date_of_collection,
             time_period_covered=time_period_covered,
-            uploader_name=uploader_name,
-            uploader_email=uploader_email,
             files=files,
         )
         return result
@@ -332,6 +370,24 @@ class DataverseConnector(BaseConnector):
         if url.startswith("doi:") or url.startswith("hdl:"):
             return url
         return None
+
+
+def _extract_project_id(identifier: str) -> str:
+    """Extract a filesystem-safe project ID from a persistent ID or URL.
+
+    Examples:
+        "doi:10.5064/F6ABC123" → "10.5064_F6ABC123"
+        "hdl:1902.1/12345" → "1902.1_12345"
+        "https://example.com/dataset.xhtml?persistentId=doi:10.5064/F6ABC" → "10.5064_F6ABC"
+    """
+    pid = identifier
+    if "persistentId=" in pid:
+        pid = pid.split("persistentId=", 1)[1].split("&")[0]
+    if pid.startswith("doi:"):
+        pid = pid[4:]
+    elif pid.startswith("hdl:"):
+        pid = pid[4:]
+    return pid.replace("/", "_").replace(":", "_")
 
 
 def _strip_html(text: str) -> str:

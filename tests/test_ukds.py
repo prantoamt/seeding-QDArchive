@@ -81,7 +81,10 @@ def test_search_parses_results(connector):
     assert results[0].title == "Transcript Qualitative Interview Data"
     assert results[0].source_name == "ukds"
     assert "857166" in results[0].source_url
-    assert results[0].authors == "Thomas Wells; Jane Doe"
+    assert results[0].persons == [
+        {"name": "Thomas Wells", "role": "AUTHOR"},
+        {"name": "Jane Doe", "role": "AUTHOR"},
+    ]
     assert "qualitative" in results[0].description
     assert "<b>" not in results[0].description
     assert results[0].keywords == ["CRIMINAL JUSTICE", "SOCIAL POLICY"]
@@ -214,7 +217,10 @@ def test_get_metadata_full(connector):
     assert result.title == "Transcript Qualitative Interview Data"
     assert result.source_name == "ukds"
     assert result.source_url == url
-    assert result.authors == "Thomas Wells; Jane Doe"
+    assert result.persons == [
+        {"name": "Thomas Wells", "role": "AUTHOR"},
+        {"name": "Jane Doe", "role": "AUTHOR"},
+    ]
     assert result.license_type == "CC-BY-NC-SA-4.0"
     assert "creativecommons.org" in result.license_url
     assert result.date_published == "2024-09-02"
@@ -231,8 +237,6 @@ def test_get_metadata_full(connector):
     assert "Northern England" in result.geographic_coverage
     assert result.producer == ["ESRC"]
     assert "10.5255/UKDA-SN-857166" in result.publication[0]
-    assert result.uploader_name == "Thomas Wells"
-    assert result.uploader_email == "thomas@example.com"
     assert result.depositor == "Thomas Wells"
     assert result.date_of_collection == "2022-08-03 to 2022-09-29"
 
@@ -305,7 +309,7 @@ def test_get_metadata_missing_optional_fields(connector):
     assert result.geographic_coverage == []
     assert result.producer == []
     assert result.publication == []
-    assert result.uploader_name == "Author One"
+    assert result.persons == [{"name": "Author One", "role": "AUTHOR"}]
     assert result.files == []
 
 

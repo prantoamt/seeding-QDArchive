@@ -71,7 +71,10 @@ def test_search_parses_results(connector):
     assert results[0].title == "Interview Dataset A"
     assert results[0].source_name == "qdr"
     assert "doi:10.5064/F6ABC123" in results[0].source_url
-    assert results[0].authors == "Smith, J.; Doe, A."
+    assert results[0].persons == [
+        {"name": "Smith, J.", "role": "AUTHOR"},
+        {"name": "Doe, A.", "role": "AUTHOR"},
+    ]
     assert results[1].title == "Focus Group Data"
 
     # Verify correct URL was called
@@ -234,7 +237,10 @@ def test_get_metadata_with_persistent_id(connector):
 
     assert result.title == "Interview Dataset A"
     assert result.license_type == "CC0 1.0"
-    assert result.authors == "Smith, J.; Doe, A."
+    assert result.persons == [
+        {"name": "Smith, J.", "role": "AUTHOR"},
+        {"name": "Doe, A.", "role": "AUTHOR"},
+    ]
     assert len(result.files) == 2
     assert result.files[0]["name"] == "interviews.qdpx"
     assert result.files[0]["id"] == 12345
@@ -246,10 +252,6 @@ def test_get_metadata_with_persistent_id(connector):
     assert result.language == ["English"]
     assert result.software == ["NVivo 12"]
     assert result.geographic_coverage == ["United States", "Canada"]
-
-    # Uploader / contact info
-    assert result.uploader_name == "Smith, J."
-    assert result.uploader_email == "smith@example.edu"
 
     # Provenance fields
     assert result.depositor == "Doe, A."
@@ -335,8 +337,6 @@ def test_get_metadata_missing_optional_fields(connector):
     with patch("httpx.get", return_value=mock_resp):
         result = connector.get_metadata(url)
 
-    assert result.uploader_name == "Contact Person"
-    assert result.uploader_email == ""
     assert result.depositor == ""
     assert result.producer == []
     assert result.publication == []

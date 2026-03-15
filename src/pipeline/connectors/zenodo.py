@@ -83,16 +83,21 @@ class ZenodoConnector(BaseConnector):
                     if not has_match:
                         continue
 
-                record_id = item.get("id", "")
+                record_id = str(item.get("id", ""))
                 creators = meta.get("creators", [])
-                author_names = "; ".join(c.get("name", "") for c in creators if c.get("name"))
+                persons = [
+                    {"name": c.get("name", ""), "role": "AUTHOR"}
+                    for c in creators
+                    if c.get("name")
+                ]
 
                 result = SearchResult(
                     source_name="zenodo",
                     source_url=f"https://zenodo.org/records/{record_id}",
                     title=meta.get("title", ""),
                     description=_strip_html(meta.get("description", "")),
-                    authors=author_names,
+                    persons=persons,
+                    project_id_on_source=record_id,
                     date_published=meta.get("publication_date", ""),
                     keywords=meta.get("keywords", []),
                     tags=meta.get("keywords", []),
@@ -133,8 +138,17 @@ class ZenodoConnector(BaseConnector):
         title = meta.get("title", "")
         description = _strip_html(meta.get("description", ""))
 
+        # Persons
         creators = meta.get("creators", [])
-        author_names = "; ".join(c.get("name", "") for c in creators if c.get("name"))
+        persons = [
+            {"name": c.get("name", ""), "role": "AUTHOR"}
+            for c in creators
+            if c.get("name")
+        ]
+        contributors = meta.get("contributors", [])
+        for c in contributors:
+            if c.get("name"):
+                persons.append({"name": c["name"], "role": "CONTRIBUTOR"})
 
         # License
         license_info = meta.get("license", {})
@@ -152,10 +166,6 @@ class ZenodoConnector(BaseConnector):
         rtype = resource_type.get("type", "") if isinstance(resource_type, dict) else ""
         kind_of_data = [rtype] if rtype else []
 
-        # Contributors → producer
-        contributors = meta.get("contributors", [])
-        producers = [c.get("name", "") for c in contributors if c.get("name")]
-
         # Related identifiers → publication
         related = meta.get("related_identifiers", [])
         publications = []
@@ -165,8 +175,12 @@ class ZenodoConnector(BaseConnector):
             if ident:
                 publications.append(f"{relation}: {ident}" if relation else ident)
 
-        # Uploader = first creator
-        uploader_name = creators[0].get("name", "") if creators else ""
+        # DOI
+        doi_value = meta.get("doi", "")
+        doi = f"https://doi.org/{doi_value}" if doi_value else ""
+
+        # Version
+        version = meta.get("version", "") or ""
 
         # Access right: if not "open", all files are restricted
         access_right = meta.get("access_right", "open")
@@ -176,7 +190,6 @@ class ZenodoConnector(BaseConnector):
         files = []
         for f in data.get("files", []):
             key = f.get("key", "")
-            # Derive friendly_type from file extension (API has no type field)
             ext = Path(key).suffix.lstrip(".") if key else ""
             files.append({
                 "id": record_id,
@@ -196,7 +209,10 @@ class ZenodoConnector(BaseConnector):
             source_url=record_url,
             title=title,
             description=description,
-            authors=author_names,
+            persons=persons,
+            project_id_on_source=record_id,
+            doi=doi,
+            version=version,
             license_type=license_type,
             license_url=license_url,
             date_published=meta.get("publication_date", ""),
@@ -207,10 +223,8 @@ class ZenodoConnector(BaseConnector):
             geographic_coverage=[],
             software=[],
             depositor="",
-            producer=producers,
+            producer=[],
             publication=publications,
-            uploader_name=uploader_name,
-            uploader_email="",
             files=files,
         )
 

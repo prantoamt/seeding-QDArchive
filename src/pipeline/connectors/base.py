@@ -12,12 +12,28 @@ class SearchResult:
     source_url: str
     title: str
     description: str = ""
-    authors: str = ""
+
+    # Persons with roles (replaces flat 'authors' string)
+    persons: list[dict] = field(default_factory=list)
+    # Each dict: {"name": "Last, First", "role": "AUTHOR"|"CONTRIBUTOR"|"EDITOR"|"UNKNOWN"}
+
+    # Identifiers
+    doi: str = ""
+    version: str = ""
+    project_id_on_source: str = ""  # ID as it appears on the source website
+
+    # License
     license_type: str = ""
     license_url: str = ""
+
+    # Dates
     date_published: str = ""
-    tags: list[str] = field(default_factory=list)
+
+    # Lists that map to child tables
     keywords: list[str] = field(default_factory=list)
+    tags: list[str] = field(default_factory=list)
+
+    # Extended metadata (kept as extra columns)
     kind_of_data: list[str] = field(default_factory=list)
     language: list[str] = field(default_factory=list)
     software: list[str] = field(default_factory=list)
@@ -27,9 +43,12 @@ class SearchResult:
     publication: list[str] = field(default_factory=list)
     date_of_collection: str = ""
     time_period_covered: str = ""
-    uploader_name: str = ""
-    uploader_email: str = ""
+
+    # Files
     files: list[dict] = field(default_factory=list)
+
+    # Download info
+    download_method: str = "API-CALL"
 
 
 class BaseConnector(ABC):

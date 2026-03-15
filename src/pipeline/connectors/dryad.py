@@ -77,11 +77,14 @@ class DryadConnector(BaseConnector):
                 abstract = _strip_html(item.get("abstract", ""))
 
                 authors_list = item.get("authors", [])
-                author_names = "; ".join(
-                    f"{a.get('firstName', '')} {a.get('lastName', '')}".strip()
+                persons = [
+                    {
+                        "name": f"{a.get('firstName', '')} {a.get('lastName', '')}".strip(),
+                        "role": "AUTHOR",
+                    }
                     for a in authors_list
                     if a.get("firstName") or a.get("lastName")
-                )
+                ]
 
                 keywords = item.get("keywords", []) or []
                 identifier = item.get("identifier", "")
@@ -91,12 +94,16 @@ class DryadConnector(BaseConnector):
                     else ""
                 )
 
+                # Extract project ID from DOI
+                project_id = _extract_project_id(identifier)
+
                 result = SearchResult(
                     source_name="dryad",
                     source_url=source_url,
                     title=title,
                     description=abstract,
-                    authors=author_names,
+                    persons=persons,
+                    project_id_on_source=project_id,
                     date_published=item.get("publicationDate", ""),
                     keywords=keywords,
                     tags=keywords,
@@ -145,13 +152,16 @@ class DryadConnector(BaseConnector):
         if methods:
             description = f"{abstract}\n\nMethods: {methods}" if abstract else methods
 
-        # Authors
+        # Persons
         authors_list = data.get("authors", [])
-        author_names = "; ".join(
-            f"{a.get('firstName', '')} {a.get('lastName', '')}".strip()
+        persons = [
+            {
+                "name": f"{a.get('firstName', '')} {a.get('lastName', '')}".strip(),
+                "role": "AUTHOR",
+            }
             for a in authors_list
             if a.get("firstName") or a.get("lastName")
-        )
+        ]
 
         # License — Dryad is always CC0
         license_info = data.get("license", "")
@@ -186,15 +196,17 @@ class DryadConnector(BaseConnector):
                     f"{relationship}: {ident}" if relationship else ident
                 )
 
-        # Uploader = first author
-        uploader_name = ""
-        uploader_email = ""
-        if authors_list:
-            first = authors_list[0]
-            uploader_name = (
-                f"{first.get('firstName', '')} {first.get('lastName', '')}".strip()
-            )
-            uploader_email = first.get("email", "") or ""
+        # DOI
+        identifier = data.get("identifier", "")
+        doi_url = ""
+        if identifier.startswith("doi:"):
+            doi_url = f"https://doi.org/{identifier[4:]}"
+
+        # Project ID
+        project_id = _extract_project_id(identifier)
+
+        # Version
+        version_number = str(data.get("versionNumber", "")) if data.get("versionNumber") else ""
 
         # Get version info to fetch files
         version_href = (
@@ -207,7 +219,8 @@ class DryadConnector(BaseConnector):
                 source_url=record_url,
                 title=title,
                 description=description,
-                authors=author_names,
+                persons=persons,
+                project_id_on_source=project_id,
             )
 
         # Extract version URL (may be relative)
@@ -221,7 +234,6 @@ class DryadConnector(BaseConnector):
         # Fetch files for this version (paginated)
         files = self._fetch_version_files(version_url)
 
-        identifier = data.get("identifier", "")
         source_url = (
             f"https://datadryad.org/stash/dataset/{identifier}"
             if identifier
@@ -233,7 +245,10 @@ class DryadConnector(BaseConnector):
             source_url=source_url,
             title=title,
             description=description,
-            authors=author_names,
+            persons=persons,
+            project_id_on_source=project_id,
+            doi=doi_url,
+            version=version_number,
             license_type=license_type,
             license_url=license_url,
             date_published=data.get("publicationDate", ""),
@@ -246,8 +261,6 @@ class DryadConnector(BaseConnector):
             depositor="",
             producer=[],
             publication=publications,
-            uploader_name=uploader_name,
-            uploader_email=uploader_email,
             files=files,
         )
 
@@ -390,6 +403,18 @@ def _extract_doi(url: str) -> str:
         return f"doi:{stripped}"
 
     return stripped
+
+
+def _extract_project_id(identifier: str) -> str:
+    """Extract a filesystem-safe project ID from a Dryad DOI identifier.
+
+    Examples:
+        "doi:10.5061/dryad.abc123" → "10.5061_dryad.abc123"
+    """
+    pid = identifier
+    if pid.startswith("doi:"):
+        pid = pid[4:]
+    return pid.replace("/", "_")
 
 
 def _encode_doi(doi: str) -> str:

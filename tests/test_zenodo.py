@@ -80,7 +80,10 @@ def test_search_parses_results(connector):
     assert results[0].title == "Qualitative Interview Study"
     assert results[0].source_name == "zenodo"
     assert results[0].source_url == "https://zenodo.org/records/12345"
-    assert results[0].authors == "Smith, J.; Doe, A."
+    assert results[0].persons == [
+        {"name": "Smith, J.", "role": "AUTHOR"},
+        {"name": "Doe, A.", "role": "AUTHOR"},
+    ]
     assert results[0].description == "A set of qualitative interviews"  # HTML stripped
     assert results[0].keywords == ["qualitative", "interviews"]
     assert results[1].title == "Focus Group Transcripts"
@@ -183,7 +186,11 @@ def test_get_metadata_full(connector):
     assert result.title == "Qualitative Interview Study"
     assert result.source_name == "zenodo"
     assert result.source_url == url
-    assert result.authors == "Smith, J.; Doe, A."
+    assert result.persons == [
+        {"name": "Smith, J.", "role": "AUTHOR"},
+        {"name": "Doe, A.", "role": "AUTHOR"},
+        {"name": "University of Testing", "role": "CONTRIBUTOR"},
+    ]
     assert result.license_type == "cc-by-4.0"
     assert result.date_published == "2023-06-15"
 
@@ -196,11 +203,8 @@ def test_get_metadata_full(connector):
     assert result.tags == ["qualitative research", "interviews"]
     assert result.language == ["eng"]
     assert result.kind_of_data == ["dataset"]
-    assert result.producer == ["University of Testing"]
+    assert result.producer == []
     assert result.publication == ["isSupplementTo: 10.1234/test"]
-    assert result.uploader_name == "Smith, J."
-    assert result.uploader_email == ""
-
     # Empty fields (not available in Zenodo)
     assert result.software == []
     assert result.geographic_coverage == []
@@ -266,7 +270,7 @@ def test_get_metadata_missing_optional_fields(connector):
     assert result.kind_of_data == []
     assert result.producer == []
     assert result.publication == []
-    assert result.uploader_name == "Author"
+    assert result.persons == [{"name": "Author", "role": "AUTHOR"}]
     assert result.files == []
 
 

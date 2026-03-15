@@ -16,7 +16,7 @@
 
 ## 1. Overview
 
-The pipeline searches open qualitative data repositories, applies a multi-stage filter cascade to identify relevant datasets, downloads qualifying files, deduplicates by content hash, and stores rich metadata in SQLite. The goal is to collect **QDA files** (`.qdpx`, `.mx`, `.nvpx`, `.hpr7`, etc.) and **qualitative data** (`.txt`, `.pdf`, `.rtf`, `.docx`, `.csv`, `.tsv`, `.xlsx`, etc.) from thirteen repositories across nine countries.
+The pipeline searches open qualitative data repositories, applies a two-stage filter (license + qualitative relevance) to identify relevant datasets, downloads all files from qualifying projects, deduplicates by content hash, and stores rich metadata in SQLite. The goal is to collect **QDA files** (`.qdpx`, `.mx`, `.nvpx`, `.hpr7`, etc.) and **qualitative data** from twenty repositories across fourteen countries.
 
 ```mermaid
 flowchart LR
@@ -110,7 +110,7 @@ Each connector implements `BaseConnector.search(query) -> list[SearchResult]`, r
 
 | Connector | API | Pagination | Rate limit | Max results |
 |-----------|-----|------------|------------|-------------|
-| **Dataverse** (QDR, DANS, DataverseNO, Harvard, SODHA, ACSS, KU Leuven, UCLouvain, RepOD, HeiDATA, bonndata) | Dataverse Search API (`/api/search`) | 100 results/page, offset-based | None | 500 |
+| **Dataverse** (QDR, DANS, DataverseNO, Harvard, SODHA, ACSS, KU Leuven, UCLouvain, RepOD, HeiDATA, bonndata, DataverseLV, CROSSDA, DaRUS, RSU, NYCU, PUCP) | Dataverse Search API (`/api/search`) | 100 results/page, offset-based | None | 500 |
 | **Zenodo** | REST API (`/api/records`) | 25 results/page, page-based | 2s between requests | 200 |
 | **UK Data Service** | EPrints JSON export (`export_reshare_JSON.js`) | Single request returns all matches | 2s between requests | Unlimited |
 
@@ -135,20 +135,15 @@ flowchart TD
 
 ## 6. Filter Cascade
 
-After metadata is fetched, each dataset passes through four sequential gates. Failing any gate skips the dataset (or individual file).
+After metadata is fetched, each dataset passes through two sequential gates. Failing either gate skips the entire dataset. If a dataset passes both gates, **all files** in the project are downloaded regardless of file type.
 
 ```mermaid
 flowchart TD
     M[Dataset with Metadata] --> G1{License Gate}
     G1 -- Not open --> SKIP1[Skip dataset]
-    G1 -- Open --> G2{Kind-of-Data Gate}
-    G2 -- Non-data type,\nno QDA files --> SKIP2[Skip dataset]
-    G2 -- Pass --> G3{Qualitative\nRelevance Gate}
-    G3 -- No qualitative signal,\nno QDA files --> SKIP3[Skip dataset]
-    G3 -- Pass --> FILES[Process each file]
-    FILES --> G4{File-Type Gate}
-    G4 -- QDA or qualitative\nextension --> DL[Download]
-    G4 -- Other extension --> META[Metadata-only record]
+    G1 -- Open --> G2{Qualitative\nRelevance Gate}
+    G2 -- No qualitative signal --> SKIP2[Skip dataset]
+    G2 -- Pass --> DL[Download all files]
 ```
 
 ### Gate 1 — License
@@ -163,15 +158,11 @@ flowchart TD
 
 No license or unrecognized license → **skip entire dataset**.
 
-### Gate 2 — Kind of Data
+### Gate 2 — Qualitative Relevance
 
-If the dataset's `kind_of_data` field matches any value in `SKIP_KIND_OF_DATA` (10 types: publication, presentation, poster, lesson, software, workflow, image, video, event, model), the dataset is skipped — **unless** it contains at least one QDA file (detected by extension, `friendly_type` containing "REFI-QDA", or `content_type` containing "refiqda").
+The pipeline checks whether the project description and keywords contain at least one of the qualitative keywords in `QUALITATIVE_KEYWORDS` (spanning 7 languages). The check is case-insensitive and uses substring matching. No qualitative signal → **skip entire dataset**.
 
-This gate filters out non-data resources that repositories sometimes classify alongside actual datasets.
-
-### Gate 3 — Qualitative Relevance
-
-If the dataset contains no QDA files, the pipeline checks whether the description and keywords contain at least one of 52 qualitative keywords spanning 7 languages. The check is case-insensitive and uses substring matching. No qualitative signal → **skip entire dataset**.
+If a dataset passes this gate, **all files are downloaded** — including audio, video, images, zip archives, and any other format. The rationale is that if the project is qualitative research, all its files are potentially valuable for QDArchive (interview recordings, transcripts in zip archives, ethnographic photos, etc.).
 
 The keywords in `QUALITATIVE_KEYWORDS` are organized into four tiers by signal strength:
 
@@ -208,17 +199,7 @@ The term `interview` is intentionally broad: in research data repositories, the 
 | French | `qualitatif`, `entretien`, `groupe de discussion` | Zenodo hosts French-language social science data |
 | Portuguese | `pesquisa qualitativa`, `entrevista qualitativa`, `grupo focal`, `análise temática` | Zenodo hosts Portuguese-language social science data |
 
-**Design trade-off: recall over precision.** The keyword list intentionally favors false positives over false negatives. A dataset that incorrectly passes Gate 3 still faces Gate 4 (file-type filtering), which only downloads QDA and qualitative file formats (`.qdpx`, `.pdf`, `.txt`, `.csv`, `.xlsx`, etc.). The combination of Gates 3 and 4 together provides sufficient precision — Gate 3 eliminates clearly non-qualitative datasets (e.g., astronomical observations, genomic data), while Gate 4 prevents downloading irrelevant file types (e.g., `.zip`, `.nc`, `.fits`) from borderline datasets.
-
-### Gate 4 — File Type
-
-Applied per-file within a qualifying dataset:
-
-| Category | Extensions | Action |
-|----------|-----------|--------|
-| **QDA files** | `.qdpx`, `.qde`, `.qdc`, `.mqda`, `.mx`, `.mx24`, `.mx24bac`, `.mc24`, `.mex24`, `.mx22`, `.mex22`, `.mx20`, `.mx18`, `.mx12`, `.mx11`, `.mx5`, `.mx4`, `.mx3`, `.mx2`, `.m2k`, `.mqbac`, `.mqtc`, `.mqex`, `.mqmtr`, `.loa`, `.sea`, `.mtr`, `.mod`, `.nvp`, `.nvpx`, `.atlproj`, `.atlasproj`, `.hpr7`, `.ddx`, `.qda`, `.qpd`, `.ppj`, `.pprj`, `.qlt`, `.f4p` | Download |
-| **Qualitative data** | `.txt`, `.pdf`, `.rtf`, `.docx`, `.csv`, `.tsv`, `.xlsx`, `.xls`, `.ods` | Download |
-| **Everything else** | Any other extension | Save as metadata-only record (`notes="irrelevant file type"`) |
+**Design trade-off: recall over precision.** The keyword list intentionally favors false positives over false negatives. Since all files in a qualifying project are downloaded, the qualitative keyword check is the sole content filter — it must be broad enough to catch non-English qualitative datasets while precise enough to exclude clearly non-qualitative projects (e.g., astronomical observations, genomic data).
 
 ## 7. Download & Deduplication
 
@@ -299,9 +280,9 @@ After `scrape-all` completes (including retries), a summary table is printed sho
 
 ## 10. Reference
 
-- [`src/pipeline/config.py`](src/pipeline/config.py) — `QDA_EXTENSIONS` (40 extensions), `QUALITATIVE_EXTENSIONS` (9 extensions), `SKIP_KIND_OF_DATA` (10 types), `QUALITATIVE_KEYWORDS` (52 keywords in 7 languages), `SOURCE_DIR_NAMES`
-- [`src/pipeline/cli.py`](src/pipeline/cli.py) — `_load_queries()`, `_scrape_source()`, `_scrape_results()`, `_save_metadata_only()`
+- [`src/pipeline/config.py`](src/pipeline/config.py) — `QDA_EXTENSIONS` (40 extensions), `QUALITATIVE_KEYWORDS` (52 keywords in 7 languages), `SOURCE_DIR_NAMES`
+- [`src/pipeline/cli.py`](src/pipeline/cli.py) — `_load_queries()`, `_scrape_source()`, `_scrape_results()`
 - [`src/pipeline/connectors/base.py`](src/pipeline/connectors/base.py) — `BaseConnector` interface, `SearchResult` dataclass
-- [`src/pipeline/connectors/__init__.py`](src/pipeline/connectors/__init__.py) — Connector registry (13 sources)
+- [`src/pipeline/connectors/__init__.py`](src/pipeline/connectors/__init__.py) — Connector registry (20 sources)
 - [`src/pipeline/utils/license.py`](src/pipeline/utils/license.py) — `normalize_license()`, `is_open_license()`, `OPEN_LICENSES`
 - [`datasources.csv`](datasources.csv) — Source of truth for all evaluated data sources and their status
